@@ -85,6 +85,12 @@ pub fn draw_intersection(
             canvas.set_draw_color(Color::RGB(255, 255, 255));
             canvas.fill_rect(Rect::new(
                 mid - half_road + offset as i32 - 1,
+                mid + half_road,
+                2,
+                top_lines,
+            ))?;
+            canvas.fill_rect(Rect::new(
+                mid - half_road + offset as i32 - 1,
                 0,
                 2,
                 top_lines,
@@ -115,7 +121,6 @@ pub fn draw_intersection(
                 2,
             ))?;
         }
-
         canvas.fill_rect(Rect::new(
             0,
             mid - half_road + offset as i32 - 1,
