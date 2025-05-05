@@ -1,20 +1,31 @@
-#[derive(Debug)]
+use sdl2::render::Texture;
+
+#[derive(Debug, PartialEq, PartialOrd)]
 pub struct Syara {
     // hada syara
-    position: (f32, f32),
-    direction: Direction,
-    lane: Lane,
-    speed: f32,
+    pub position: (f32, f32),
+    pub direction: Direction,
+    pub lane: Lane,
+    pub speed: f32,
 }
 
-#[derive(Debug)]
+pub struct CarTextures<'a> {
+    pub left: Texture<'a>,
+    pub right: Texture<'a>,
+    pub up: Texture<'a>,
+    pub down: Texture<'a>,
+}
+
+#[derive(Debug, PartialEq, PartialOrd)]
+
 pub enum Lane {
     // hada maslk
     left,
     right,
     do5ry,
 }
-#[derive(Debug)]
+#[derive(Debug, PartialEq, PartialOrd)]
+
 pub enum Direction {
     // hada itijahat
     Going_up,
@@ -44,7 +55,7 @@ impl Syara {
     pub fn render(
         &self,
         canvas: &mut sdl2::render::Canvas<sdl2::video::Window>,
-        texture: &sdl2::render::Texture,
+        sor: &CarTextures,
     ) {
         let rect = sdl2::rect::Rect::new(
             self.position.0 as i32,
@@ -52,6 +63,13 @@ impl Syara {
             80, // width of the car
             80, // height of the car
         );
-        let _ = canvas.copy(texture, None, rect);
+
+        let sora = match self.direction {
+            Direction::Going_left => &sor.left,
+            Direction::Going_right => &sor.right,
+            Direction::Going_up => &sor.up,
+            Direction::Going_down => &sor.down,
+        };
+        let _ = canvas.copy(sora, None, rect);
     }
 }

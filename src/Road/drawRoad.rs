@@ -6,7 +6,7 @@ use sdl2::render::Canvas;
 use sdl2::{event::Event, image::LoadTexture};
 use std::time::Duration;
 
-use super::syara::{Direction, Syara};
+use super::syara::{CarTextures, Direction, Syara};
 
 pub fn open_window() -> Result<(), String> {
     let sdl_context = sdl2::init()?;
@@ -22,18 +22,18 @@ pub fn open_window() -> Result<(), String> {
 
     let mut canvas = window.into_canvas().build().map_err(|e| e.to_string())?;
     let texture_creator = canvas.texture_creator();
-    let mut car_texture = texture_creator
-        .load_texture("C:/Users/admar/Desktop/smart-road/target/debug/image.png")
-        .expect("Failed");
 
+    let mut car_texture = CarTextures {
+        // 
+        // C:/Users/admar/Desktop/smart-road/target/debug/cars/Police.png
+        left: texture_creator.load_texture("C:/Users/admar/Desktop/smart-road/target/debug/cars/PoliceLeft.png")?,
+        right: texture_creator.load_texture("C:/Users/admar/Desktop/smart-road/target/debug/cars/PoliceRight.png")?,
+        up: texture_creator.load_texture("C:/Users/admar/Desktop/smart-road/target/debug/cars/Police.png")?,
+        down: texture_creator.load_texture("C:/Users/admar/Desktop/smart-road/target/debug/cars/PoliceDown.png")?,
+    };
     let mut event_pump = sdl_context.event_pump()?;
     let mut syarat: Vec<Syara> = Vec::new();
-    let syara = Syara::new(
-        (400.0, 300.0),
-        Direction::Going_left,
-        super::syara::Lane::do5ry,
-        0.0,
-    );
+
 
     'running: loop {
         for event in event_pump.poll_iter() {
@@ -50,9 +50,6 @@ pub fn open_window() -> Result<(), String> {
                     keycode: Some(Keycode::Left),
                     ..
                 } => {
-                      car_texture = texture_creator
-                     .load_texture("C:/Users/admar/Desktop/smart-road/target/debug/cars/PoliceLeft.png")
-                     .expect("Failed");
                     let syara = Syara::new(
                         (900.0,390.0), // mid
                         Direction::Going_left,
@@ -65,9 +62,6 @@ pub fn open_window() -> Result<(), String> {
                     keycode: Some(Keycode::UP),
                     ..
                 } => {
-                      car_texture = texture_creator
-                     .load_texture("C:/Users/admar/Desktop/smart-road/target/debug/cars/Police.png")
-                     .expect("Failed");
                     let syara = Syara::new(
                         (900.0,390.0), // mid
                         Direction::Going_up,
@@ -80,9 +74,6 @@ pub fn open_window() -> Result<(), String> {
                     keycode: Some(Keycode::Right),
                     ..
                 } => {
-                      car_texture = texture_creator
-                     .load_texture("C:/Users/admar/Desktop/smart-road/target/debug/cars/PoliceRight.png")
-                     .expect("Failed");
                     let syara = Syara::new(
                         (900.0,390.0), // mid
                         Direction::Going_right,
@@ -95,9 +86,6 @@ pub fn open_window() -> Result<(), String> {
                     keycode: Some(Keycode::Down),
                     ..
                 } => {
-                      car_texture = texture_creator
-                     .load_texture("C:/Users/admar/Desktop/smart-road/target/debug/cars/PoliceDown.png")
-                     .expect("Failed");
                     let syara = Syara::new(
                         (900.0,390.0), // mid
                         Direction::Going_down,
