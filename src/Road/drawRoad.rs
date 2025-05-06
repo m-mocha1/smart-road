@@ -1,39 +1,52 @@
 extern crate sdl2;
+use std::env;
+use std::time::{Duration, Instant};
 use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
 use sdl2::rect::Rect;
 use sdl2::render::Canvas;
 use sdl2::{event::Event, image::LoadTexture};
-use std::time::Duration;
+// use std::time::Duration;
 
 use super::syara::{CarTextures, Direction, Syara};
 
 pub fn open_window() -> Result<(), String> {
-    let sdl_context = sdl2::init()?;
+    let sdl_context = sdl2::init().map_err(|e| e.to_string())?;
+println!("SDL2 initialized successfully!");
     let video_subsystem = sdl_context.video()?;
 
     let window = video_subsystem
         .window("Smart Intersection", 1000, 1000)
         // .position(2500, 250)
         // .position_centered()
-        .position(900, 80)
+        // .position(900, 80)
+        .position(1500, 80)
+
         .build()
         .map_err(|e| e.to_string())?;
+        println!("Window created successfully!");
 
     let mut canvas = window.into_canvas().build().map_err(|e| e.to_string())?;
+    // cars img
     let texture_creator = canvas.texture_creator();
 
-    let mut car_texture = CarTextures {
-        // 
+    
+    let mut path = env::current_dir().unwrap();
+    println!("Current working dir: {:?}", env::current_dir());
+
+
+        path.push("img");
         // C:/Users/admar/Desktop/smart-road/target/debug/cars/Police.png
-        left: texture_creator.load_texture("C:/Users/admar/Desktop/smart-road/target/debug/cars/PoliceLeft.png")?,
-        right: texture_creator.load_texture("C:/Users/admar/Desktop/smart-road/target/debug/cars/PoliceRight.png")?,
-        up: texture_creator.load_texture("C:/Users/admar/Desktop/smart-road/target/debug/cars/Police.png")?,
-        down: texture_creator.load_texture("C:/Users/admar/Desktop/smart-road/target/debug/cars/PoliceDown.png")?,
-    };
+        let  soar = CarTextures{
+            left: texture_creator.load_texture(path.join("left.png"))?,
+            right: texture_creator.load_texture(path.join("right.png"))?,
+            up: texture_creator.load_texture(path.join("up.png"))?,
+            down: texture_creator.load_texture(path.join("down.png"))?,
+};
+
     let mut event_pump = sdl_context.event_pump()?;
     let mut syarat: Vec<Syara> = Vec::new();
-
+    let mut last_spawn_time = Instant::now() - Duration::from_secs(7); // So the first keypress works
 
     'running: loop {
         for event in event_pump.poll_iter() {
@@ -45,55 +58,80 @@ pub fn open_window() -> Result<(), String> {
                     keycode: Some(Keycode::Escape),
                     ..
                 } => break 'running,
-                //make syarat
+                //make syaratS
                 Event::KeyDown{
                     keycode: Some(Keycode::Left),
                     ..
                 } => {
+                    let now = Instant::now();
+    if now.duration_since(last_spawn_time) >= Duration::from_secs(1) {
+                    let dir=Direction::Going_left;
+                    let (mslk,mok3)=random_lane_and_pos(&dir);
                     let syara = Syara::new(
-                        (900.0,390.0), // mid
-                        Direction::Going_left,
-                        super::syara::Lane::do5ry,
+                        mok3,
+                        dir,
+                        mslk,
                         100.0,
                     );
                     syarat.push(syara);
+                    last_spawn_time = now;
+                }
                 }
                 Event::KeyDown{
                     keycode: Some(Keycode::UP),
                     ..
                 } => {
+                    let now = Instant::now();
+                    if now.duration_since(last_spawn_time) >= Duration::from_secs(1) {
+                    let dir=Direction::Going_up;
+                    let (mslk,mok3)=random_lane_and_pos(&dir);
                     let syara = Syara::new(
-                        (900.0,390.0), // mid
-                        Direction::Going_up,
-                        super::syara::Lane::do5ry,
+                        mok3,
+                        dir,
+                        mslk,
                         100.0,
                     );
                     syarat.push(syara);
+                    last_spawn_time = now;
+                }
                 }
                 Event::KeyDown{
                     keycode: Some(Keycode::Right),
                     ..
                 } => {
+                    let now = Instant::now();
+                    if now.duration_since(last_spawn_time) >= Duration::from_secs(1) {
+                    let dir=Direction::Going_right;
+                    let (mslk,mok3)=random_lane_and_pos(&dir);
                     let syara = Syara::new(
-                        (900.0,390.0), // mid
-                        Direction::Going_right,
-                        super::syara::Lane::do5ry,
+                        mok3,
+                        dir,
+                        mslk,
                         100.0,
                     );
                     syarat.push(syara);
+                    last_spawn_time = now;
+                }
                 }
                 Event::KeyDown{
                     keycode: Some(Keycode::Down),
                     ..
                 } => {
+                    let now = Instant::now();
+                    if now.duration_since(last_spawn_time) >= Duration::from_secs(1) {
+                    let dir=Direction::Going_down;
+                    let (mslk,mok3)=random_lane_and_pos(&dir);
                     let syara = Syara::new(
-                        (900.0,390.0), // mid
-                        Direction::Going_down,
-                        super::syara::Lane::do5ry,
+                        mok3,
+                        dir,
+                        mslk,
                         100.0,
                     );
                     syarat.push(syara);
+                    last_spawn_time = now;
                 }
+                }
+
 
 
 
@@ -107,7 +145,7 @@ pub fn open_window() -> Result<(), String> {
 
         draw_intersection(&mut canvas)?;
         for car in &syarat {
-            car.render(&mut canvas, &car_texture);
+            car.render(&mut canvas, &soar);
         }
         canvas.present();
         std::thread::sleep(Duration::from_millis(16));
@@ -211,4 +249,32 @@ pub fn draw_intersection(
     }
 
     Ok(())
+}
+fn random_lane_and_pos(direction: &Direction) -> (super::syara::Lane, (f32, f32)) {
+    use rand::prelude::*;
+    use super::syara::{Lane, Direction};
+
+    let mut rng = thread_rng();
+    let lanes = [Lane::Left, Lane::Right, Lane::Do5ry];
+    let lane = *lanes.choose(&mut rng).unwrap();
+
+    let pos = match (&lane, direction) {
+        (Lane::Left, Direction::Going_right) => (0.0, 484.0),
+        (Lane::Right, Direction::Going_right) => (0.0, 578.0),
+        (Lane::Do5ry, Direction::Going_right) => (0.0, 530.0),
+
+        (Lane::Left, Direction::Going_up) => (485.0, 980.0),
+        (Lane::Right, Direction::Going_up) => (580.0, 980.0),
+        (Lane::Do5ry, Direction::Going_up) => (530.0, 980.0),
+
+        (Lane::Left, Direction::Going_left) => (980.0, 440.0),
+        (Lane::Right, Direction::Going_left) => (980.0, 345.0),
+        (Lane::Do5ry, Direction::Going_left) => (900.0,390.0),
+
+        (Lane::Left, Direction::Going_down) => (440.0, 0.0),
+        (Lane::Right, Direction::Going_down) => (345.0, 0.0),
+        (Lane::Do5ry, Direction::Going_down) => (391.0,0.0),
+    };
+
+    (lane, pos)
 }

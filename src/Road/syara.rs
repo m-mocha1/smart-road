@@ -16,13 +16,13 @@ pub struct CarTextures<'a> {
     pub down: Texture<'a>,
 }
 
-#[derive(Debug, PartialEq, PartialOrd)]
 
+#[derive(Debug, PartialEq, PartialOrd,Clone, Copy)]
 pub enum Lane {
     // hada maslk
-    left,
-    right,
-    do5ry,
+    Left,
+    Right,
+    Do5ry,
 }
 #[derive(Debug, PartialEq, PartialOrd)]
 
