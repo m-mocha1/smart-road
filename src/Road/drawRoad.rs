@@ -103,7 +103,7 @@ println!("SDL2 initialized successfully!");
                     ..
                 } => {
                     let now = Instant::now();
-                    if now.duration_since(last_spawn_time) >= Duration::from_secs(0) {
+                    if now.duration_since(last_spawn_time) >= Duration::from_secs(1) {
                     let dir=Direction::Going_right;
                     let (mslk,mok3)=random_lane_and_pos(&dir);
                     let syara = Syara::new(
@@ -121,7 +121,7 @@ println!("SDL2 initialized successfully!");
                     ..
                 } => {
                     let now = Instant::now();
-                    if now.duration_since(last_spawn_time) >= Duration::from_secs(0) {
+                    if now.duration_since(last_spawn_time) >= Duration::from_secs(1) {
                     let dir=Direction::Going_down;
                     let (mslk,mok3)=random_lane_and_pos(&dir);
                     let syara = Syara::new(
