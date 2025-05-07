@@ -8,6 +8,7 @@ use sdl2::render::Canvas;
 use sdl2::{event::Event, image::LoadTexture};
 // use std::time::Duration;
 
+
 use super::syara::{CarTextures, Direction, Syara};
 
 pub fn open_window() -> Result<(), String> {
@@ -102,7 +103,7 @@ println!("SDL2 initialized successfully!");
                     ..
                 } => {
                     let now = Instant::now();
-                    if now.duration_since(last_spawn_time) >= Duration::from_secs(1) {
+                    if now.duration_since(last_spawn_time) >= Duration::from_secs(0) {
                     let dir=Direction::Going_right;
                     let (mslk,mok3)=random_lane_and_pos(&dir);
                     let syara = Syara::new(
@@ -120,7 +121,7 @@ println!("SDL2 initialized successfully!");
                     ..
                 } => {
                     let now = Instant::now();
-                    if now.duration_since(last_spawn_time) >= Duration::from_secs(1) {
+                    if now.duration_since(last_spawn_time) >= Duration::from_secs(0) {
                     let dir=Direction::Going_down;
                     let (mslk,mok3)=random_lane_and_pos(&dir);
                     let syara = Syara::new(
@@ -140,7 +141,86 @@ println!("SDL2 initialized successfully!");
                 _ => {}
             }
         }
-        let dt = 1.0 / 60.0; // 60 FPS frame time
+
+        
+        let safety_distance = 100.0;
+        let stop_distance = 100.0;
+let max_speed = 100.0;
+let min_speed = 10.0;
+let deceleration = 80.0; // pixels/sec²
+let acceleration = 100.0; // pixels/sec²
+let dt = 1.0 / 60.0;
+
+for i in 0..syarat.len() {
+    let mut closest_distance = f32::MAX;
+
+    for j in 0..syarat.len() {
+        if i == j {
+            continue;
+        }
+
+        // Check if another car is directly in front (regardless of lane/direction)
+        let dist = match syarat[i].direction {
+            Direction::Going_up => {
+                if syarat[j].position.1 < syarat[i].position.1 &&
+                   (syarat[i].position.0 - syarat[j].position.0).abs() < 18.0
+                {
+                    syarat[i].position.1 - syarat[j].position.1
+                } else {
+                    continue;
+                }
+            }
+            Direction::Going_down => {
+                if syarat[j].position.1 > syarat[i].position.1 &&
+                   (syarat[i].position.0 - syarat[j].position.0).abs() < 25.0
+                {
+                    syarat[j].position.1 - syarat[i].position.1
+                } else {
+                    continue;
+                }
+            }
+            Direction::Going_left => {
+                if syarat[j].position.0 < syarat[i].position.0 &&
+                   (syarat[i].position.1 - syarat[j].position.1).abs() < 25.0
+                {
+                    syarat[i].position.0 - syarat[j].position.0
+                } else {
+                    continue;
+                }
+            }
+            Direction::Going_right => {
+                if syarat[j].position.0 > syarat[i].position.0 &&
+                   (syarat[i].position.1 - syarat[j].position.1).abs() < 25.0
+                {
+                    syarat[j].position.0 - syarat[i].position.0
+                } else {
+                    continue;
+                }
+            }
+        };
+
+        if dist < closest_distance {
+            closest_distance = dist;
+        }
+    }
+
+    let target_speed = if closest_distance < stop_distance {
+        5.0
+    } else if closest_distance < safety_distance {
+        min_speed
+    } else {
+        max_speed
+    };
+
+    if syarat[i].speed > target_speed {
+        syarat[i].speed = (syarat[i].speed - deceleration * dt).max(target_speed);
+    } else if syarat[i].speed < target_speed {
+        syarat[i].speed = (syarat[i].speed + acceleration * dt).min(target_speed);
+    }
+}
+        
+
+   
         for car in &mut syarat {
             car.update_position(dt);
         }
@@ -279,4 +359,24 @@ fn random_lane_and_pos(direction: &Direction) -> (super::syara::Lane, (f32, f32)
     };
 
     (lane, pos)
+}
+
+pub fn is_too_close(car1: &Syara, car2: &Syara, distance: f32) -> bool {
+    if car1.lane != car2.lane || car1.direction != car2.direction {
+        return false;
+    }
+    match car1.direction {
+        Direction::Going_up => car2.position.1 < car1.position.1 && (car1.position.1 - car2.position.1) < distance,
+        Direction::Going_down => car2.position.1 > car1.position.1 && (car2.position.1 - car1.position.1) < distance,
+        Direction::Going_left => car2.position.0 < car1.position.0 && (car1.position.0 - car2.position.0) < distance,
+        Direction::Going_right => car2.position.0 > car1.position.0 && (car2.position.0 - car1.position.0) < distance,
+    }
+}
+
+fn get_bounding_rect(car: &Syara) -> Rect {
+    let (w, h) = match car.direction {
+        Direction::Going_up | Direction::Going_down => (20, 40),
+        Direction::Going_left | Direction::Going_right => (40, 20),
+    };
+    Rect::new(car.position.0 as i32, car.position.1 as i32, w, h)
 }

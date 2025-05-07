@@ -151,3 +151,4 @@ self.direction = Direction::Going_right;
 fn is_close(a: f32, b: f32, epsilon: f32) -> bool {
     (a - b).abs() < epsilon
 }
+
