@@ -48,6 +48,8 @@ println!("SDL2 initialized successfully!");
     let mut syarat: Vec<Syara> = Vec::new();
     let mut last_spawn_time = Instant::now() - Duration::from_secs(7); // So the first keypress works
 
+
+
     'running: loop {
         for event in event_pump.poll_iter() {
             match event {
