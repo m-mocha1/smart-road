@@ -4,13 +4,14 @@ use sdl2::keyboard::Keycode;
 use sdl2::{event::Event, image::LoadTexture};
 use crate::Road::mafr2::grid_cell;
 use crate::Road::mafr2::build_occupancy_set;
+use std::collections::HashSet;
 use std::env;
 use std::time::{Duration, Instant};
     use rand::prelude::*;
 
 // use std::time::Duration;
 
-use super::syara::{CarTextures, Direction, Syara};
+use super::syara::{CarTextures, Direction, Syara, Lane};
 use crate::Road::mafr2::draw_intersection;
 
 pub fn open_window() -> Result<(), String> {
@@ -156,31 +157,50 @@ pub fn open_window() -> Result<(), String> {
             }
         }
 
-        // let safety_distance = 100.0;
-        // let stop_distance = 100.0;
-        // let max_speed = 100.0;
-        // let min_speed = 10.0;
-        // let deceleration = 80.0; // pixels/sec²
-        // let acceleration = 100.0; // pixels/sec²
+
+
+
+
+
+
         let dt = 1.0 / 60.0;
 
        
         
+      
+      
+        let mut reserved = HashSet::new();
         let occupied = build_occupancy_set(&syarat);
+
         for car in &mut syarat {    
             let path = predict_path(car, 3);
-    let blocked = path.iter().any(|cell| occupied.contains(cell));
+             let mut blocked = false;
+  let oci = path.iter().any(|cell| occupied.contains(cell));
+        for cell in path.iter().take(5) {
+        if reserved.contains(cell) {
+            blocked = true;
+            break;
+        }
+    }
+    if oci {
+        car.speed = (car.speed - 100.0 * dt).max(10.0); // slow down
+    }
 
     if blocked {
-        car.speed = (car.speed - 80.0* dt).max(40.0); // slow down
+        car.speed = (car.speed - 100.0 * dt).max(10.0); // slow down
     } else {
         car.speed = (car.speed + 80.0 * dt).min(100.0); // restore speed
+      for cell in path.iter().take(4) {
+    reserved.insert(*cell);
     }
+    }
+        car.speed = (car.speed + 80.0 * dt).min(100.0); // restore speed
+    
 
     car.update_position(dt);
         }
 
-        draw_intersection(&mut canvas, &syarat)?;
+        draw_intersection(&mut canvas, &syarat,&reserved)?;
         for car in &syarat {
             car.render(&mut canvas, &soar);
         }
@@ -230,38 +250,59 @@ fn random_dir() -> Direction {
     ];
     *dir.choose(&mut rng).unwrap()
 }
-fn predict_path(car: &Syara, steps: usize) -> Vec<(usize, usize)> {
+
+
+fn predict_path(car: &Syara, max_cells: usize) -> Vec<(usize, usize)> {
     let mut path = Vec::new();
-    let (mut x, mut y) = car.position;
-    let dx;
-    let dy;
+    let mut seen = HashSet::new();
 
-    match car.direction {
-        Direction::Going_up => {
-            dx = 0.0;
-            dy = -car.speed;
-        }
-        Direction::Going_down => {
-            dx = 0.0;
-            dy = car.speed;
-        }
-        Direction::Going_left => {
-            dx = -car.speed;
-            dy = 0.0;
-        }
-        Direction::Going_right => {
-            dx = car.speed;
-            dy = 0.0;
-        }
-    }
+    let step_size = 1.0;
+    let mut distance = 0.0;
 
-    for _ in 0..steps {
+    let mut x = car.position.0 + 20.0;
+    let mut y = car.position.1 + 20.0;
+    let mut dir = car.direction;
+
+    while path.len() < max_cells && distance < 300.0 {
+        // 👇 Apply turning logic
+        if is_in_intersection_center((x, y)) {
+            dir = match (car.lane, dir) {
+                (Lane::Do5ry, Direction::Going_up) => Direction::Going_left,
+                (Lane::Do5ry, Direction::Going_down) => Direction::Going_right,
+                (Lane::Do5ry, Direction::Going_left) => Direction::Going_down,
+                (Lane::Do5ry, Direction::Going_right) => Direction::Going_up,
+                _ => dir, // no turn
+            };
+        }
+
+        // Advance position in current direction
+        let (dx, dy) = match dir {
+            Direction::Going_up => (0.0, -step_size),
+            Direction::Going_down => (0.0, step_size),
+            Direction::Going_left => (-step_size, 0.0),
+            Direction::Going_right => (step_size, 0.0),
+        };
+
         x += dx;
         y += dy;
+        distance += step_size;
+
         if let Some(cell) = grid_cell((x, y)) {
-            path.push(cell);
+            if seen.insert(cell) {
+                path.push(cell);
+            }
+        } else {
+            break;
         }
     }
-
     path
 }
+fn is_in_intersection_center(pos: (f32, f32)) -> bool {
+    if let Some((row, col)) = grid_cell(pos) {
+        row >= 4 && row <= 9 && col >= 4 && col <= 9 // adjust as needed
+    } else {
+        false
+    }
+}
+
+  

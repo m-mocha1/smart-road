@@ -43,6 +43,14 @@ impl Syara {
             speed,
         }
     }
+    pub fn future_position(&self, dt: f32) -> (f32, f32) {
+        match self.direction {
+            Direction::Going_up => (self.position.0, self.position.1 - self.speed * dt),
+            Direction::Going_down => (self.position.0, self.position.1 + self.speed * dt),
+            Direction::Going_left => (self.position.0 - self.speed * dt, self.position.1),
+            Direction::Going_right => (self.position.0 + self.speed * dt, self.position.1),
+        }
+    }
     pub fn update_position(&mut self, dt: f32) {
         let displacement = self.speed * dt;
         //------------left turn vars----------------

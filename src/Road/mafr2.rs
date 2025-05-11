@@ -6,6 +6,7 @@ use std::collections::HashSet;
 pub fn draw_intersection(
     canvas: &mut sdl2::render::Canvas<sdl2::video::Window>,
     syrat: &Vec<Syara>,
+    reserved: &HashSet<(usize, usize)>,
 ) -> Result<(), String> {
     const SCREEN_SIZE: u32 = 1000;
     const LANE: u32 = 47;
@@ -33,8 +34,8 @@ pub fn draw_intersection(
     // Lane markings - optional: yellow/white lines
     canvas.set_draw_color(Color::RGB(255, 255, 0));
     let occupied = build_occupancy_set(&syrat);
-    const GRID_ROWS: i32 = 6;
-    const GRID_COLS: i32 = 6;
+    const GRID_ROWS: i32 = 18;
+    const GRID_COLS: i32 = 18;
     let grid_w = GRID_COLS * LANE as i32; // 94
     let grid_h = GRID_ROWS * LANE as i32; // 94
     let origin_x = mid - grid_w / 2; // 453
@@ -49,6 +50,11 @@ pub fn draw_intersection(
             canvas.set_draw_color(Color::RGB(128, 0, 128));
             canvas.draw_rect(Rect::new(x, y, LANE, LANE))?;
 
+            // 🔴 Highlight reserved cells in red
+            if reserved.contains(&(row as usize, col as usize)) {
+                canvas.set_draw_color(Color::RGBA(255, 0, 0, 96)); // translucent red
+                canvas.fill_rect(Rect::new(x, y, LANE, LANE))?;
+            }
             // Fill if occupied
             if occupied.contains(&(row as usize, col as usize)) {
                 canvas.set_draw_color(Color::RGBA(128, 0, 128, 96));
@@ -126,7 +132,8 @@ pub fn draw_intersection(
 pub fn build_occupancy_set(cars: &[Syara]) -> HashSet<(usize, usize)> {
     let mut s = HashSet::new();
     for car in cars {
-        if let Some(cell) = grid_cell(car.position) {
+        let car_center = (car.position.0 + 40.0, car.position.1 + 40.0);
+        if let Some(cell) = grid_cell(car_center) {
             s.insert(cell);
         }
     }
@@ -135,17 +142,18 @@ pub fn build_occupancy_set(cars: &[Syara]) -> HashSet<(usize, usize)> {
 pub fn grid_cell(pos: (f32, f32)) -> Option<(usize, usize)> {
     const SCREEN: u32 = 1000;
     const LANE: u32 = 47;
-    const GRID_ROWS: usize = 7;
-    const GRID_COLS: usize = 7;
+    const GRID_ROWS: usize = 18;
+    const GRID_COLS: usize = 18;
 
     let mid = (SCREEN / 2) as i32;
-    let grid_w = GRID_COLS as i32 * LANE as i32;
-    let grid_h = GRID_ROWS as i32 * LANE as i32;
+    let grid_w = (GRID_COLS as u32 * LANE) as i32;
+    let grid_h = (GRID_ROWS as u32 * LANE) as i32;
     let origin_x = mid - grid_w / 2;
     let origin_y = mid - grid_h / 2;
 
-    let x = pos.0 as i32;
-    let y = pos.1 as i32;
+    // Round the position first to avoid float truncation issues
+    let x = pos.0.round() as i32;
+    let y = pos.1.round() as i32;
 
     if x < origin_x || x >= origin_x + grid_w || y < origin_y || y >= origin_y + grid_h {
         return None;
@@ -153,5 +161,10 @@ pub fn grid_cell(pos: (f32, f32)) -> Option<(usize, usize)> {
 
     let col = ((x - origin_x) / LANE as i32) as usize;
     let row = ((y - origin_y) / LANE as i32) as usize;
-    Some((row, col))
+
+    if row < GRID_ROWS && col < GRID_COLS {
+        Some((row, col))
+    } else {
+        None
+    }
 }
