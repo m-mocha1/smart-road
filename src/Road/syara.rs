@@ -1,5 +1,5 @@
+use crate::Road::mafr2::build_occupancy_set;
 use sdl2::render::Texture;
-
 #[derive(Debug, PartialEq, PartialOrd)]
 pub struct Syara {
     // hada syara
@@ -45,7 +45,6 @@ impl Syara {
     }
     pub fn update_position(&mut self, dt: f32) {
         let displacement = self.speed * dt;
-
         //------------left turn vars----------------
         let upLeftTurn: (f32, f32) = (485.0, 435.0); //g
         let leftLeftTurn: (f32, f32) = (435.0, 440.0); //g

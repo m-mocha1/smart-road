@@ -2,7 +2,8 @@ extern crate sdl2;
 use rand::seq::SliceRandom;
 use sdl2::keyboard::Keycode;
 use sdl2::{event::Event, image::LoadTexture};
-use std::collections::HashSet;
+use crate::Road::mafr2::grid_cell;
+use crate::Road::mafr2::build_occupancy_set;
 use std::env;
 use std::time::{Duration, Instant};
     use rand::prelude::*;
@@ -155,16 +156,28 @@ pub fn open_window() -> Result<(), String> {
             }
         }
 
-        let safety_distance = 100.0;
-        let stop_distance = 100.0;
-        let max_speed = 100.0;
-        let min_speed = 10.0;
-        let deceleration = 80.0; // pixels/sec²
-        let acceleration = 100.0; // pixels/sec²
+        // let safety_distance = 100.0;
+        // let stop_distance = 100.0;
+        // let max_speed = 100.0;
+        // let min_speed = 10.0;
+        // let deceleration = 80.0; // pixels/sec²
+        // let acceleration = 100.0; // pixels/sec²
         let dt = 1.0 / 60.0;
 
-        for car in &mut syarat {
-            car.update_position(dt);
+       
+        
+        let occupied = build_occupancy_set(&syarat);
+        for car in &mut syarat {    
+            let path = predict_path(car, 3);
+    let blocked = path.iter().any(|cell| occupied.contains(cell));
+
+    if blocked {
+        car.speed = (car.speed - 80.0* dt).max(40.0); // slow down
+    } else {
+        car.speed = (car.speed + 80.0 * dt).min(100.0); // restore speed
+    }
+
+    car.update_position(dt);
         }
 
         draw_intersection(&mut canvas, &syarat)?;
@@ -207,6 +220,7 @@ fn random_lane_and_pos(direction: &Direction) -> (super::syara::Lane, (f32, f32)
     (lane, pos)
 }
 fn random_dir() -> Direction {
+
     let mut rng = thread_rng();
     let dir = vec![
         Direction::Going_down,
@@ -215,4 +229,39 @@ fn random_dir() -> Direction {
         Direction::Going_up,
     ];
     *dir.choose(&mut rng).unwrap()
+}
+fn predict_path(car: &Syara, steps: usize) -> Vec<(usize, usize)> {
+    let mut path = Vec::new();
+    let (mut x, mut y) = car.position;
+    let dx;
+    let dy;
+
+    match car.direction {
+        Direction::Going_up => {
+            dx = 0.0;
+            dy = -car.speed;
+        }
+        Direction::Going_down => {
+            dx = 0.0;
+            dy = car.speed;
+        }
+        Direction::Going_left => {
+            dx = -car.speed;
+            dy = 0.0;
+        }
+        Direction::Going_right => {
+            dx = car.speed;
+            dy = 0.0;
+        }
+    }
+
+    for _ in 0..steps {
+        x += dx;
+        y += dy;
+        if let Some(cell) = grid_cell((x, y)) {
+            path.push(cell);
+        }
+    }
+
+    path
 }
