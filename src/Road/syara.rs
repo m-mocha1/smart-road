@@ -16,8 +16,7 @@ pub struct CarTextures<'a> {
     pub down: Texture<'a>,
 }
 
-
-#[derive(Debug, PartialEq, PartialOrd,Clone, Copy)]
+#[derive(Debug, PartialEq, PartialOrd, Clone, Copy)]
 pub enum Lane {
     // hada maslk
     Left,
@@ -47,79 +46,73 @@ impl Syara {
     pub fn update_position(&mut self, dt: f32) {
         let displacement = self.speed * dt;
 
-
-
         //------------left turn vars----------------
-        let upLeftTurn:(f32,f32) = (485.0,435.0);//g
-        let leftLeftTurn:(f32,f32) = (435.0, 440.0);//g
-        let rightLeftTurn:(f32,f32) = (489.0,484.0);//g
-        let downLeftTurn:(f32,f32) = (440.0,487.0);//g
-      
+        let upLeftTurn: (f32, f32) = (485.0, 435.0); //g
+        let leftLeftTurn: (f32, f32) = (435.0, 440.0); //g
+        let rightLeftTurn: (f32, f32) = (489.0, 484.0); //g
+        let downLeftTurn: (f32, f32) = (440.0, 487.0); //g
+
         //-------right turn vars ----------------------------------
-        let upRightTurn:(f32,f32) = (580.0,580.0);//g
-        let leftRightTurn:(f32,f32) = (345.0, 578.0);//g
-        let rightRightTurn:(f32,f32) = (578.0,345.0);//g
-        let downRightTurn:(f32,f32) = (345.0,341.0);//g
+        let upRightTurn: (f32, f32) = (580.0, 580.0); //g
+        let leftRightTurn: (f32, f32) = (345.0, 578.0); //g
+        let rightRightTurn: (f32, f32) = (578.0, 345.0); //g
+        let downRightTurn: (f32, f32) = (345.0, 341.0); //g
         // coming up and turning right
         if self.direction == Direction::Going_up
-        && is_close(self.position.0,upRightTurn.0, 2.0)
-        && is_close(self.position.1, upRightTurn.1, 2.0)
-    {
-        self.direction = Direction::Going_right;
-    }
-    // coming from left and turning right
+            && is_close(self.position.0, upRightTurn.0, 2.0)
+            && is_close(self.position.1, upRightTurn.1, 2.0)
+        {
+            self.direction = Direction::Going_right;
+        }
+        // coming from left and turning right
         if self.direction == Direction::Going_right
-        && is_close(self.position.0,leftRightTurn.0, 2.0)
-        && is_close(self.position.1, leftRightTurn.1, 2.0)
-    {
-        self.direction = Direction::Going_down;
-    }
-    // coming from right and turning right
+            && is_close(self.position.0, leftRightTurn.0, 2.0)
+            && is_close(self.position.1, leftRightTurn.1, 2.0)
+        {
+            self.direction = Direction::Going_down;
+        }
+        // coming from right and turning right
         if self.direction == Direction::Going_left
-        && is_close(self.position.0,rightRightTurn.0, 2.0)
-        && is_close(self.position.1, rightRightTurn.1, 2.0)
-    {
-        self.direction = Direction::Going_up;
-    }
-    // coming from up and turning right
+            && is_close(self.position.0, rightRightTurn.0, 2.0)
+            && is_close(self.position.1, rightRightTurn.1, 2.0)
+        {
+            self.direction = Direction::Going_up;
+        }
+        // coming from up and turning right
         if self.direction == Direction::Going_down
-        && is_close(self.position.0,downRightTurn.0, 2.0)
-        && is_close(self.position.1, downRightTurn.1, 2.0)
-    {
-        self.direction = Direction::Going_left;
-    }
-     //--------------------------------------------------------------
+            && is_close(self.position.0, downRightTurn.0, 2.0)
+            && is_close(self.position.1, downRightTurn.1, 2.0)
+        {
+            self.direction = Direction::Going_left;
+        }
+        //--------------------------------------------------------------
         //-------left turn----------------------------------
         if self.direction == Direction::Going_up
-        && is_close(self.position.0,upLeftTurn.0, 2.0)
-        && is_close(self.position.1, upLeftTurn.1, 2.0)
-    {
-        self.direction = Direction::Going_left;
-    }  
-    if self.direction == Direction::Going_left
-    && is_close(self.position.0,leftLeftTurn.0, 2.0)
-    && is_close(self.position.1, leftLeftTurn.1, 2.0)
-{
-    self.direction = Direction::Going_down;
-} 
- if self.direction == Direction::Going_right
-&& is_close(self.position.0,rightLeftTurn.0, 2.0)
-&& is_close(self.position.1, rightLeftTurn.1, 2.0)
-{
-self.direction = Direction::Going_up;
-}  
-if self.direction == Direction::Going_down
-&& is_close(self.position.0,downLeftTurn.0, 2.0)
-&& is_close(self.position.1, downLeftTurn.1, 2.0)
-{
-self.direction = Direction::Going_right;
-}
+            && is_close(self.position.0, upLeftTurn.0, 2.0)
+            && is_close(self.position.1, upLeftTurn.1, 2.0)
+        {
+            self.direction = Direction::Going_left;
+        }
+        if self.direction == Direction::Going_left
+            && is_close(self.position.0, leftLeftTurn.0, 2.0)
+            && is_close(self.position.1, leftLeftTurn.1, 2.0)
+        {
+            self.direction = Direction::Going_down;
+        }
+        if self.direction == Direction::Going_right
+            && is_close(self.position.0, rightLeftTurn.0, 2.0)
+            && is_close(self.position.1, rightLeftTurn.1, 2.0)
+        {
+            self.direction = Direction::Going_up;
+        }
+        if self.direction == Direction::Going_down
+            && is_close(self.position.0, downLeftTurn.0, 2.0)
+            && is_close(self.position.1, downLeftTurn.1, 2.0)
+        {
+            self.direction = Direction::Going_right;
+        }
 
-
-
-
-
-    //----------------------------------------------------------------
+        //----------------------------------------------------------------
         match self.direction {
             Direction::Going_left => self.position.0 -= displacement,
             Direction::Going_right => self.position.0 += displacement,
@@ -151,4 +144,3 @@ self.direction = Direction::Going_right;
 fn is_close(a: f32, b: f32, epsilon: f32) -> bool {
     (a - b).abs() < epsilon
 }
-
