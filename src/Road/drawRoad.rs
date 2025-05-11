@@ -1,9 +1,12 @@
 extern crate sdl2;
+use rand::seq::SliceRandom;
 use sdl2::keyboard::Keycode;
 use sdl2::{event::Event, image::LoadTexture};
 use std::collections::HashSet;
 use std::env;
 use std::time::{Duration, Instant};
+    use rand::prelude::*;
+
 // use std::time::Duration;
 
 use super::syara::{CarTextures, Direction, Syara};
@@ -127,7 +130,24 @@ pub fn open_window() -> Result<(), String> {
                     last_spawn_time = now;
                 }
                 }
-
+                Event::KeyDown{
+                    keycode: Some(Keycode::R),
+                    ..
+                } => {  
+                     let now = Instant::now();
+                    if now.duration_since(last_spawn_time) >= Duration::from_secs(1) {
+                        let dir = random_dir();
+                         let (mslk,mok3)=random_lane_and_pos(&dir);
+                         let syara = Syara::new(
+                        mok3,
+                        dir,
+                        mslk,
+                        100.0,
+                    );
+                    syarat.push(syara);
+                    last_spawn_time = now;
+                    }
+                }
 
 
 
@@ -185,4 +205,14 @@ fn random_lane_and_pos(direction: &Direction) -> (super::syara::Lane, (f32, f32)
     };
 
     (lane, pos)
+}
+fn random_dir() -> Direction {
+    let mut rng = thread_rng();
+    let dir = vec![
+        Direction::Going_down,
+        Direction::Going_left,
+        Direction::Going_right,
+        Direction::Going_up,
+    ];
+    *dir.choose(&mut rng).unwrap()
 }

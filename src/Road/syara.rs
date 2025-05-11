@@ -23,8 +23,8 @@ pub enum Lane {
     Right,
     Do5ry,
 }
-#[derive(Debug, PartialEq, PartialOrd)]
 
+#[derive(Debug, PartialEq, PartialOrd, Clone, Copy)]
 pub enum Direction {
     // hada itijahat
     Going_up,
