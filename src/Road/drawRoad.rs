@@ -9,7 +9,6 @@ use std::collections::HashSet;
 use std::env;
 use std::time::{Duration, Instant};
 
-
 use super::syara::{CarTextures, Direction, Lane, Syara};
 use crate::Road::mafr2::draw_intersection;
 
@@ -130,7 +129,6 @@ pub fn open_window() -> Result<(), String> {
 
                 _ => {}
             }
-       
         }
         let dt = 1.0 / 60.0;
 
@@ -164,15 +162,14 @@ pub fn open_window() -> Result<(), String> {
             car.update_position(dt);
         }
 
-        draw_intersection(&mut canvas, &syarat, &reserved,c)?;
+        draw_intersection(&mut canvas, &syarat, &reserved)?;
         for car in &syarat {
             car.render(&mut canvas, &soar);
         }
-        
+
         canvas.present();
         std::thread::sleep(Duration::from_millis(16));
     }
-
 
     Ok(())
 }
@@ -261,7 +258,7 @@ fn predict_path(car: &Syara, max_cells: usize) -> Vec<(usize, usize)> {
 }
 fn is_in_intersection_center(pos: (f32, f32)) -> bool {
     if let Some((row, col)) = grid_cell(pos) {
-        row >= 4 && row <= 9 && col >= 4 && col <= 9
+        row == 9 && col == 7
     } else {
         false
     }

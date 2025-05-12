@@ -148,6 +148,6 @@ impl Syara {
         let _ = canvas.copy(sora, None, rect);
     }
 }
-fn is_close(a: f32, b: f32, epsilon: f32) -> bool {
+pub fn is_close(a: f32, b: f32, epsilon: f32) -> bool {
     (a - b).abs() < epsilon
 }
