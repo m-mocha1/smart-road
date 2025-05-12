@@ -7,7 +7,10 @@ pub fn draw_intersection(
     canvas: &mut sdl2::render::Canvas<sdl2::video::Window>,
     syrat: &Vec<Syara>,
     reserved: &HashSet<(usize, usize)>,
+    show: bool,
 ) -> Result<(), String> {
+    let ttf_context = sdl2::ttf::init().map_err(|e| e.to_string())?;
+    let font = ttf_context.load_font("path/to/your/font.ttf", 24)?;
     const SCREEN_SIZE: u32 = 1000;
     const LANE: u32 = 47;
     const ROAD_WIDTH: u32 = LANE * 6;
@@ -124,6 +127,44 @@ pub fn draw_intersection(
             top_lines,
             2,
         ))?;
+    }
+    if show {
+        let texture_creator = canvas.texture_creator();
+        // semi-transparent black background
+        canvas.set_draw_color(Color::RGBA(0, 0, 0, 180));
+        let overlay = Rect::new(150, 150, 700, 700);
+        canvas.fill_rect(overlay)?;
+
+        // white border
+        canvas.set_draw_color(Color::RGB(255, 255, 255));
+        canvas.draw_rect(overlay)?;
+
+        let stats_text = format!(
+            "Cars passed: {}\nMax speed: {:.1}\nMin speed: {:.1}",
+            10, 20.0, 40.0
+        );
+
+        // Render the text to an SDL surface
+        let surface = font
+            .render(&stats_text)
+            .blended_wrapped(Color::WHITE, overlay.width())
+            .map_err(|e| e.to_string())?;
+
+        // Turn that surface into a texture
+        let texture = texture_creator
+            .create_texture_from_surface(&surface)
+            .map_err(|e| e.to_string())?;
+
+        // Where to draw it (inset 10px from the box border)
+        let target = Rect::new(
+            overlay.x() + 10,
+            overlay.y() + 10,
+            surface.width(),
+            surface.height(),
+        );
+
+        // Copy the text texture onto the canvas
+        canvas.copy(&texture, None, Some(target))?;
     }
 
     Ok(())

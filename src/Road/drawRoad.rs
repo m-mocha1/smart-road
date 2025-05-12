@@ -1,16 +1,16 @@
 extern crate sdl2;
+use crate::Road::mafr2::build_occupancy_set;
+use crate::Road::mafr2::grid_cell;
+use rand::prelude::*;
 use rand::seq::SliceRandom;
 use sdl2::keyboard::Keycode;
 use sdl2::{event::Event, image::LoadTexture};
-use crate::Road::mafr2::grid_cell;
-use crate::Road::mafr2::build_occupancy_set;
 use std::collections::HashSet;
 use std::env;
 use std::time::{Duration, Instant};
-    use rand::prelude::*;
 
 
-use super::syara::{CarTextures, Direction, Syara, Lane};
+use super::syara::{CarTextures, Direction, Lane, Syara};
 use crate::Road::mafr2::draw_intersection;
 
 pub fn open_window() -> Result<(), String> {
@@ -46,165 +46,133 @@ pub fn open_window() -> Result<(), String> {
     let mut event_pump = sdl_context.event_pump()?;
     let mut syarat: Vec<Syara> = Vec::new();
     let mut last_spawn_time = Instant::now() - Duration::from_secs(7); // So the first keypress works
-
+    let mut c = false;
     'running: loop {
         for event in event_pump.poll_iter() {
             match event {
                 //if window closed
-                Event::Quit { .. }
+                Event::Quit { .. } => break 'running,
                 //esc key
-                | Event::KeyDown {
+                Event::KeyDown {
                     keycode: Some(Keycode::Escape),
                     ..
-                } => break 'running,
+                } => {
+                    syarat.clear();
+                    c = true;
+                }
+
                 //make syaratS
-                Event::KeyDown{
+                Event::KeyDown {
                     keycode: Some(Keycode::Left),
                     ..
                 } => {
                     let now = Instant::now();
-    if now.duration_since(last_spawn_time) >= Duration::from_secs(1) {
-                    let dir=Direction::Going_left;
-                    let (mslk,mok3)=random_lane_and_pos(&dir);
-                    let syara = Syara::new(
-                        mok3,
-                        dir,
-                        mslk,
-                        100.0,
-                    );
-                    syarat.push(syara);
-                    last_spawn_time = now;
+                    if now.duration_since(last_spawn_time) >= Duration::from_secs(1) {
+                        let dir = Direction::Going_left;
+                        let (mslk, mok3) = random_lane_and_pos(&dir);
+                        let syara = Syara::new(mok3, dir, mslk, 100.0);
+                        syarat.push(syara);
+                        last_spawn_time = now;
+                    }
                 }
-                }
-                Event::KeyDown{
+                Event::KeyDown {
                     keycode: Some(Keycode::UP),
                     ..
                 } => {
                     let now = Instant::now();
                     if now.duration_since(last_spawn_time) >= Duration::from_secs(1) {
-                    let dir=Direction::Going_up;
-                    let (mslk,mok3)=random_lane_and_pos(&dir);
-                    let syara = Syara::new(
-                        mok3,
-                        dir,
-                        mslk,
-                        100.0,
-                    );
-                    syarat.push(syara);
-                    last_spawn_time = now;
+                        let dir = Direction::Going_up;
+                        let (mslk, mok3) = random_lane_and_pos(&dir);
+                        let syara = Syara::new(mok3, dir, mslk, 100.0);
+                        syarat.push(syara);
+                        last_spawn_time = now;
+                    }
                 }
-                }
-                Event::KeyDown{
+                Event::KeyDown {
                     keycode: Some(Keycode::Right),
                     ..
                 } => {
                     let now = Instant::now();
                     if now.duration_since(last_spawn_time) >= Duration::from_secs(1) {
-                    let dir=Direction::Going_right;
-                    let (mslk,mok3)=random_lane_and_pos(&dir);
-                    let syara = Syara::new(
-                        mok3,
-                        dir,
-                        mslk,
-                        100.0,
-                    );
-                    syarat.push(syara);
-                    last_spawn_time = now;
+                        let dir = Direction::Going_right;
+                        let (mslk, mok3) = random_lane_and_pos(&dir);
+                        let syara = Syara::new(mok3, dir, mslk, 100.0);
+                        syarat.push(syara);
+                        last_spawn_time = now;
+                    }
                 }
-                }
-                Event::KeyDown{
+                Event::KeyDown {
                     keycode: Some(Keycode::Down),
                     ..
                 } => {
                     let now = Instant::now();
                     if now.duration_since(last_spawn_time) >= Duration::from_secs(1) {
-                    let dir=Direction::Going_down;
-                    let (mslk,mok3)=random_lane_and_pos(&dir);
-                    let syara = Syara::new(
-                        mok3,
-                        dir,
-                        mslk,
-                        100.0,
-                    );
-                    syarat.push(syara);
-                    last_spawn_time = now;
+                        let dir = Direction::Going_down;
+                        let (mslk, mok3) = random_lane_and_pos(&dir);
+                        let syara = Syara::new(mok3, dir, mslk, 100.0);
+                        syarat.push(syara);
+                        last_spawn_time = now;
+                    }
                 }
-                }
-                Event::KeyDown{
+                Event::KeyDown {
                     keycode: Some(Keycode::R),
                     ..
-                } => {  
-                     let now = Instant::now();
+                } => {
+                    let now = Instant::now();
                     if now.duration_since(last_spawn_time) >= Duration::from_secs(1) {
                         let dir = random_dir();
-                         let (mslk,mok3)=random_lane_and_pos(&dir);
-                         let syara = Syara::new(
-                        mok3,
-                        dir,
-                        mslk,
-                        100.0,
-                    );
-                    syarat.push(syara);
-                    last_spawn_time = now;
+                        let (mslk, mok3) = random_lane_and_pos(&dir);
+                        let syara = Syara::new(mok3, dir, mslk, 100.0);
+                        syarat.push(syara);
+                        last_spawn_time = now;
                     }
                 }
 
-
-
                 _ => {}
             }
+       
         }
-
-
-
-
-
-
-
         let dt = 1.0 / 60.0;
 
-       
-        
-      
-      
         let mut reserved = HashSet::new();
         let occupied = build_occupancy_set(&syarat);
 
-        for car in &mut syarat {    
+        for car in &mut syarat {
             let path = predict_path(car, 3);
-             let mut blocked = false;
-  let oci = path.iter().any(|cell| occupied.contains(cell));
-        for cell in path.iter().take(5) {
-        if reserved.contains(cell) {
-            blocked = true;
-            break;
+            let mut blocked = false;
+            let oci = path.iter().any(|cell| occupied.contains(cell));
+            for cell in path.iter().take(5) {
+                if reserved.contains(cell) {
+                    blocked = true;
+                    break;
+                }
+            }
+            if oci {
+                car.speed = (car.speed - 100.0 * dt).max(10.0); // slow down
+            }
+
+            if blocked {
+                car.speed = (car.speed - 100.0 * dt).max(10.0); // slow down
+            } else {
+                car.speed = (car.speed + 80.0 * dt).min(100.0); // restore speed
+                for cell in path.iter().take(4) {
+                    reserved.insert(*cell);
+                }
+            }
+            car.speed = (car.speed + 80.0 * dt).min(100.0); // restore speed
+
+            car.update_position(dt);
         }
-    }
-    if oci {
-        car.speed = (car.speed - 100.0 * dt).max(10.0); // slow down
-    }
 
-    if blocked {
-        car.speed = (car.speed - 100.0 * dt).max(10.0); // slow down
-    } else {
-        car.speed = (car.speed + 80.0 * dt).min(100.0); // restore speed
-      for cell in path.iter().take(4) {
-    reserved.insert(*cell);
-    }
-    }
-        car.speed = (car.speed + 80.0 * dt).min(100.0); // restore speed
-    
-
-    car.update_position(dt);
-        }
-
-        draw_intersection(&mut canvas, &syarat,&reserved)?;
+        draw_intersection(&mut canvas, &syarat, &reserved,c)?;
         for car in &syarat {
             car.render(&mut canvas, &soar);
         }
+        
         canvas.present();
         std::thread::sleep(Duration::from_millis(16));
     }
+
 
     Ok(())
 }
@@ -238,7 +206,6 @@ fn random_lane_and_pos(direction: &Direction) -> (super::syara::Lane, (f32, f32)
     (lane, pos)
 }
 fn random_dir() -> Direction {
-
     let mut rng = thread_rng();
     let dir = vec![
         Direction::Going_down,
@@ -248,7 +215,6 @@ fn random_dir() -> Direction {
     ];
     *dir.choose(&mut rng).unwrap()
 }
-
 
 fn predict_path(car: &Syara, max_cells: usize) -> Vec<(usize, usize)> {
     let mut path = Vec::new();
@@ -268,7 +234,7 @@ fn predict_path(car: &Syara, max_cells: usize) -> Vec<(usize, usize)> {
                 (Lane::Do5ry, Direction::Going_down) => Direction::Going_right,
                 (Lane::Do5ry, Direction::Going_left) => Direction::Going_down,
                 (Lane::Do5ry, Direction::Going_right) => Direction::Going_up,
-                _ => dir, 
+                _ => dir,
             };
         }
 
@@ -295,10 +261,8 @@ fn predict_path(car: &Syara, max_cells: usize) -> Vec<(usize, usize)> {
 }
 fn is_in_intersection_center(pos: (f32, f32)) -> bool {
     if let Some((row, col)) = grid_cell(pos) {
-        row >= 4 && row <= 9 && col >= 4 && col <= 9 
+        row >= 4 && row <= 9 && col >= 4 && col <= 9
     } else {
         false
     }
 }
-
-  
