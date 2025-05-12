@@ -9,7 +9,6 @@ use std::env;
 use std::time::{Duration, Instant};
     use rand::prelude::*;
 
-// use std::time::Duration;
 
 use super::syara::{CarTextures, Direction, Syara, Lane};
 use crate::Road::mafr2::draw_intersection;
@@ -37,7 +36,6 @@ pub fn open_window() -> Result<(), String> {
     println!("Current working dir: {:?}", env::current_dir());
 
     path.push("img");
-    // C:/Users/admar/Desktop/smart-road/target/debug/cars/Police.png
     let soar = CarTextures {
         left: texture_creator.load_texture(path.join("left.png"))?,
         right: texture_creator.load_texture(path.join("right.png"))?,
@@ -264,18 +262,16 @@ fn predict_path(car: &Syara, max_cells: usize) -> Vec<(usize, usize)> {
     let mut dir = car.direction;
 
     while path.len() < max_cells && distance < 300.0 {
-        // 👇 Apply turning logic
         if is_in_intersection_center((x, y)) {
             dir = match (car.lane, dir) {
                 (Lane::Do5ry, Direction::Going_up) => Direction::Going_left,
                 (Lane::Do5ry, Direction::Going_down) => Direction::Going_right,
                 (Lane::Do5ry, Direction::Going_left) => Direction::Going_down,
                 (Lane::Do5ry, Direction::Going_right) => Direction::Going_up,
-                _ => dir, // no turn
+                _ => dir, 
             };
         }
 
-        // Advance position in current direction
         let (dx, dy) = match dir {
             Direction::Going_up => (0.0, -step_size),
             Direction::Going_down => (0.0, step_size),
@@ -299,7 +295,7 @@ fn predict_path(car: &Syara, max_cells: usize) -> Vec<(usize, usize)> {
 }
 fn is_in_intersection_center(pos: (f32, f32)) -> bool {
     if let Some((row, col)) = grid_cell(pos) {
-        row >= 4 && row <= 9 && col >= 4 && col <= 9 // adjust as needed
+        row >= 4 && row <= 9 && col >= 4 && col <= 9 
     } else {
         false
     }

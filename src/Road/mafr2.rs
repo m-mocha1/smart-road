@@ -36,10 +36,10 @@ pub fn draw_intersection(
     let occupied = build_occupancy_set(&syrat);
     const GRID_ROWS: i32 = 18;
     const GRID_COLS: i32 = 18;
-    let grid_w = GRID_COLS * LANE as i32; // 94
-    let grid_h = GRID_ROWS * LANE as i32; // 94
-    let origin_x = mid - grid_w / 2; // 453
-    let origin_y = mid - grid_h / 2; // 453
+    let grid_w = GRID_COLS * LANE as i32;
+    let grid_h = GRID_ROWS * LANE as i32;
+    let origin_x = mid - grid_w / 2;
+    let origin_y = mid - grid_h / 2;
     canvas.set_draw_color(Color::RGB(128, 0, 128)); // purple
     for row in 0..GRID_ROWS {
         for col in 0..GRID_COLS {
@@ -50,12 +50,11 @@ pub fn draw_intersection(
             canvas.set_draw_color(Color::RGB(128, 0, 128));
             canvas.draw_rect(Rect::new(x, y, LANE, LANE))?;
 
-            // 🔴 Highlight reserved cells in red
             if reserved.contains(&(row as usize, col as usize)) {
-                canvas.set_draw_color(Color::RGBA(255, 0, 0, 96)); // translucent red
+                canvas.set_draw_color(Color::RGBA(255, 0, 0, 96)); // red
                 canvas.fill_rect(Rect::new(x, y, LANE, LANE))?;
             }
-            // Fill if occupied
+
             if occupied.contains(&(row as usize, col as usize)) {
                 canvas.set_draw_color(Color::RGBA(128, 0, 128, 96));
                 canvas.fill_rect(Rect::new(x, y, LANE, LANE))?;
@@ -63,7 +62,7 @@ pub fn draw_intersection(
         }
     }
     for i in 0..7 {
-        // Vertical markings
+        // vertical
         let offset = i * LANE;
         if i == 0 || i == 6 {
             canvas.fill_rect(Rect::new(
@@ -103,7 +102,7 @@ pub fn draw_intersection(
             ))?;
         }
 
-        // Horizontal markings
+        // horizon
         if i == 0 || i == 6 {
             canvas.fill_rect(Rect::new(
                 0,
@@ -151,7 +150,6 @@ pub fn grid_cell(pos: (f32, f32)) -> Option<(usize, usize)> {
     let origin_x = mid - grid_w / 2;
     let origin_y = mid - grid_h / 2;
 
-    // Round the position first to avoid float truncation issues
     let x = pos.0.round() as i32;
     let y = pos.1.round() as i32;
 
