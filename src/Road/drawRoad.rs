@@ -13,6 +13,8 @@ use super::syara::{CarTextures, Direction, Lane, Syara};
 use crate::Road::mafr2::draw_intersection;
 
 pub fn open_window() -> Result<(), String> {
+    let mut r = false;
+
     let sdl_context = sdl2::init().map_err(|e| e.to_string())?;
     println!("SDL2 initialized successfully!");
     let video_subsystem = sdl_context.video()?;
@@ -41,7 +43,6 @@ pub fn open_window() -> Result<(), String> {
         up: texture_creator.load_texture(path.join("up.png"))?,
         down: texture_creator.load_texture(path.join("down.png"))?,
     };
-
     let mut event_pump = sdl_context.event_pump()?;
     let mut syarat: Vec<Syara> = Vec::new();
     let mut last_spawn_time = Instant::now() - Duration::from_secs(7); // So the first keypress works
@@ -117,6 +118,16 @@ pub fn open_window() -> Result<(), String> {
                     keycode: Some(Keycode::R),
                     ..
                 } => {
+                    r = true;
+                    println!("r : {}",r);
+                }
+
+                _ => {}
+            }
+            
+            
+            }
+                if r {
                     let now = Instant::now();
                     if now.duration_since(last_spawn_time) >= Duration::from_secs(1) {
                         let dir = random_dir();
@@ -126,34 +137,30 @@ pub fn open_window() -> Result<(), String> {
                         last_spawn_time = now;
                     }
                 }
-
-                _ => {}
-            }
-        }
         let dt = 1.0 / 60.0;
 
         let mut reserved = HashSet::new();
         let occupied = build_occupancy_set(&syarat);
-
+                let look =3;
         for car in &mut syarat {
-            let path = predict_path(car, 5);
+            let path = predict_path(car, look);
             let mut blocked = false;
             let oci = path.iter().any(|cell| occupied.contains(cell));
-            for cell in path.iter().take(5) {
+            for cell in path.iter().take(look) {
                 if reserved.contains(cell) {
                     blocked = true;
                     break;
                 }
             }
             if oci {
-                car.speed = (car.speed - 100.0 * dt).max(10.0); // slow down
+                car.speed = (car.speed - 100.0 * dt).max(0.0); // slow downs
             }
 
             if blocked {
-                car.speed = (car.speed - 100.0 * dt).max(10.0); // slow down
+                car.speed = (car.speed - 100.0 * dt).max(0.0); // slow down
             } else {
                 car.speed = (car.speed + 80.0 * dt).min(100.0); // restore speed
-                for cell in path.iter().take(4) {
+                for cell in path.iter().take(look) {
                     reserved.insert(*cell);
                 }
             }
@@ -224,7 +231,7 @@ fn predict_path( car: &mut Syara, max_cells: usize) -> Vec<(usize, usize)> {
     let mut y = car.position.1 + 40.0;
     let mut dir = car.direction;
     while path.len() < max_cells && distance < 300.0 {
-        println!("{}",car.turned);
+        // println!("{}",car.turned);
 
         if !car.turned{
              dir= is_in_intersection_center((x,y), dir, car.turned,car.lane);
@@ -255,7 +262,7 @@ fn predict_path( car: &mut Syara, max_cells: usize) -> Vec<(usize, usize)> {
 }
 fn is_in_intersection_center(pos: (f32, f32),direction: Direction,t :bool,lane : Lane) -> Direction {
     if let Some((row, col)) = grid_cell(pos) {
-        println!("row: {} / col: {}", row, col);
+        // println!("row: {} / col: {}", row, col);
 
         //going up turns works
         if direction == Direction::Going_up && lane == Lane::Left && (row == 8  && col == 9 )&& !t{
