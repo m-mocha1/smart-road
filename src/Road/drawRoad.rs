@@ -45,8 +45,9 @@ pub fn open_window() -> Result<(), String> {
     let mut event_pump = sdl_context.event_pump()?;
     let mut syarat: Vec<Syara> = Vec::new();
     let mut last_spawn_time = Instant::now() - Duration::from_secs(7); // So the first keypress works
-    let mut c = false;
-    'running: loop {
+        let test_car = Syara::new((485.0, 980.0), Direction::Going_up, Lane::Left, 50.0,false);
+        syarat.push(test_car);
+   'running: loop {
         for event in event_pump.poll_iter() {
             match event {
                 //if window closed
@@ -57,7 +58,6 @@ pub fn open_window() -> Result<(), String> {
                     ..
                 } => {
                     syarat.clear();
-                    c = true;
                 }
 
                 //make syaratS
@@ -69,7 +69,7 @@ pub fn open_window() -> Result<(), String> {
                     if now.duration_since(last_spawn_time) >= Duration::from_secs(1) {
                         let dir = Direction::Going_left;
                         let (mslk, mok3) = random_lane_and_pos(&dir);
-                        let syara = Syara::new(mok3, dir, mslk, 100.0);
+                        let syara = Syara::new(mok3, dir, mslk, 100.0,false);
                         syarat.push(syara);
                         last_spawn_time = now;
                     }
@@ -82,7 +82,7 @@ pub fn open_window() -> Result<(), String> {
                     if now.duration_since(last_spawn_time) >= Duration::from_secs(1) {
                         let dir = Direction::Going_up;
                         let (mslk, mok3) = random_lane_and_pos(&dir);
-                        let syara = Syara::new(mok3, dir, mslk, 100.0);
+                        let syara = Syara::new(mok3, dir, mslk, 100.0,false);
                         syarat.push(syara);
                         last_spawn_time = now;
                     }
@@ -95,7 +95,7 @@ pub fn open_window() -> Result<(), String> {
                     if now.duration_since(last_spawn_time) >= Duration::from_secs(1) {
                         let dir = Direction::Going_right;
                         let (mslk, mok3) = random_lane_and_pos(&dir);
-                        let syara = Syara::new(mok3, dir, mslk, 100.0);
+                        let syara = Syara::new(mok3, dir, mslk, 100.0,false);
                         syarat.push(syara);
                         last_spawn_time = now;
                     }
@@ -108,7 +108,7 @@ pub fn open_window() -> Result<(), String> {
                     if now.duration_since(last_spawn_time) >= Duration::from_secs(1) {
                         let dir = Direction::Going_down;
                         let (mslk, mok3) = random_lane_and_pos(&dir);
-                        let syara = Syara::new(mok3, dir, mslk, 100.0);
+                        let syara = Syara::new(mok3, dir, mslk, 100.0,false);
                         syarat.push(syara);
                         last_spawn_time = now;
                     }
@@ -121,7 +121,7 @@ pub fn open_window() -> Result<(), String> {
                     if now.duration_since(last_spawn_time) >= Duration::from_secs(1) {
                         let dir = random_dir();
                         let (mslk, mok3) = random_lane_and_pos(&dir);
-                        let syara = Syara::new(mok3, dir, mslk, 100.0);
+                        let syara = Syara::new(mok3, dir, mslk, 100.0,false);
                         syarat.push(syara);
                         last_spawn_time = now;
                     }
@@ -136,7 +136,7 @@ pub fn open_window() -> Result<(), String> {
         let occupied = build_occupancy_set(&syarat);
 
         for car in &mut syarat {
-            let path = predict_path(car, 3);
+            let path = predict_path(car, 5);
             let mut blocked = false;
             let oci = path.iter().any(|cell| occupied.contains(cell));
             for cell in path.iter().take(5) {
@@ -213,35 +213,24 @@ fn random_dir() -> Direction {
     *dir.choose(&mut rng).unwrap()
 }
 
-fn predict_path(car: &Syara, max_cells: usize) -> Vec<(usize, usize)> {
+fn predict_path( car: &mut Syara, max_cells: usize) -> Vec<(usize, usize)> {
     let mut path = Vec::new();
     let mut seen = HashSet::new();
 
-    let step_size = 1.0;
+    let step_size = 0.5;
     let mut distance = 0.0;
 
     let mut x = car.position.0 + 40.0;
     let mut y = car.position.1 + 40.0;
     let mut dir = car.direction;
-
     while path.len() < max_cells && distance < 300.0 {
-        if is_in_intersection_center((x, y)) {
-            dir = match (car.lane, dir) {
-                (Lane::Left, Direction::Going_up) => Direction::Going_left,
-                (Lane::Right, Direction::Going_up) => Direction::Going_right,
+        println!("{}",car.turned);
 
-                (Lane::Left, Direction::Going_down) => Direction::Going_left,
-                (Lane::Right, Direction::Going_down) => Direction::Going_right,
-
-                (Lane::Left, Direction::Going_right) => Direction::Going_up,
-                (Lane::Right, Direction::Going_right) => Direction::Going_down, //g
-
-                (Lane::Left, Direction::Going_left) => Direction::Going_down,
-                (Lane::Right, Direction::Going_left) => Direction::Going_up,
-
-                _ => dir,
-            };
+        if !car.turned{
+             dir= is_in_intersection_center((x,y), dir, car.turned,car.lane);
         }
+
+   
 
         let (dx, dy) = match dir {
             Direction::Going_up => (0.0, -step_size),
@@ -264,14 +253,48 @@ fn predict_path(car: &Syara, max_cells: usize) -> Vec<(usize, usize)> {
     }
     path
 }
-fn is_in_intersection_center(pos: (f32, f32)) -> bool {
+fn is_in_intersection_center(pos: (f32, f32),direction: Direction,t :bool,lane : Lane) -> Direction {
     if let Some((row, col)) = grid_cell(pos) {
-        println!("{} / {}", row, col);
-        //going right turns
-        (row == 9 && col ==7)|| (row == 11 && col == 6) ||
-        //going left turns
-        (row == 8 && col == 5) || (row == 6 && col == 10)
-    } else {
-        false
-    }
+        println!("row: {} / col: {}", row, col);
+
+        //going up turns works
+        if direction == Direction::Going_up && lane == Lane::Left && (row == 8  && col == 9 )&& !t{
+            return Direction::Going_left;
+        }else if direction == Direction::Going_up && lane == Lane::Right  && (row == 11  && col == 11 )&& !t{
+            return Direction::Going_right;
+        //--------------
+
+
+        //going right turns works
+        } else if direction == Direction::Going_right && lane == Lane::Left && (row == 11  && col == 6 ) && !t{
+        return Direction::Going_down;
+    }else if direction == Direction::Going_right  && lane == Lane::Right && (row == 9  && col == 9 ) && !t{
+        return Direction::Going_up;
+        //--------------
+
+
+        //going left turns works
+    } else if direction == Direction::Going_left &&  lane == Lane::Left && (row == 6  && col == 11 ) && !t{
+        return Direction::Going_up;
+    }else if direction == Direction::Going_left&& lane == Lane::Right &&(row == 8  && col == 8 ) && !t{
+        return Direction::Going_down;
+        //--------------
+
+    
+        //going down turns 
+    } else if direction == Direction::Going_down && (row == 6  && col == 11 ) && !t{
+        return Direction::Going_up;
+    }else if direction == Direction::Going_down&& (row == 9  && col == 8 ) && !t{
+        return Direction::Going_right;
+        //--------------
+
+    
+        }else {
+            direction
+        }
+
+        }else {
+    direction
+    
+}
 }
