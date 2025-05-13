@@ -7,7 +7,8 @@ pub struct Syara {
     pub direction: Direction,
     pub lane: Lane,
     pub speed: f32,
-    pub turned: bool
+    pub turned: bool,
+    pub pri: bool,
 }
 
 pub struct CarTextures<'a> {
@@ -36,14 +37,21 @@ pub enum Direction {
 
 impl Syara {
     //make a new car
-    pub fn new(position: (f32, f32), direction: Direction, lane: Lane, speed: f32, turned : bool) -> Self {
-        println!("{}",turned);
+    pub fn new(
+        position: (f32, f32),
+        direction: Direction,
+        lane: Lane,
+        speed: f32,
+        turned: bool,
+    ) -> Self {
+        println!("{}", turned);
         Self {
             position,
             direction,
             lane,
             speed,
             turned,
+            pri: false,
         }
     }
 
@@ -61,7 +69,8 @@ impl Syara {
         let rightRightTurn: (f32, f32) = (578.0, 345.0); //g
         let downRightTurn: (f32, f32) = (345.0, 341.0); //g
         // coming up and turning right
-        if self.direction == Direction::Going_up && !self.turned
+        if self.direction == Direction::Going_up
+            && !self.turned
             && is_close(self.position.0, upRightTurn.0, 2.0)
             && is_close(self.position.1, upRightTurn.1, 2.0)
         {
@@ -69,23 +78,25 @@ impl Syara {
             self.turned = true;
         }
         // coming from left and turning right
-        if self.direction == Direction::Going_right&& !self.turned
+        if self.direction == Direction::Going_right
+            && !self.turned
             && is_close(self.position.0, leftRightTurn.0, 2.0)
             && is_close(self.position.1, leftRightTurn.1, 2.0)
         {
             self.direction = Direction::Going_down;
         }
         // coming from right and turning right
-        if self.direction == Direction::Going_left&& !self.turned
+        if self.direction == Direction::Going_left
+            && !self.turned
             && is_close(self.position.0, rightRightTurn.0, 2.0)
             && is_close(self.position.1, rightRightTurn.1, 2.0)
         {
             self.direction = Direction::Going_up;
             self.turned = true;
-
         }
         // coming from up and turning right
-        if self.direction == Direction::Going_down&& !self.turned
+        if self.direction == Direction::Going_down
+            && !self.turned
             && is_close(self.position.0, downRightTurn.0, 2.0)
             && is_close(self.position.1, downRightTurn.1, 2.0)
         {
@@ -93,37 +104,37 @@ impl Syara {
         }
         //--------------------------------------------------------------
         //-------left turn----------------------------------
-        if self.direction == Direction::Going_up&& !self.turned
+        if self.direction == Direction::Going_up
+            && !self.turned
             && is_close(self.position.0, upLeftTurn.0, 2.0)
             && is_close(self.position.1, upLeftTurn.1, 2.0)
         {
             self.direction = Direction::Going_left;
             self.turned = true;
-
         }
-        if self.direction == Direction::Going_left&& !self.turned
+        if self.direction == Direction::Going_left
+            && !self.turned
             && is_close(self.position.0, leftLeftTurn.0, 2.0)
             && is_close(self.position.1, leftLeftTurn.1, 2.0)
         {
             self.direction = Direction::Going_down;
             self.turned = true;
-
         }
-        if self.direction == Direction::Going_right&& !self.turned
+        if self.direction == Direction::Going_right
+            && !self.turned
             && is_close(self.position.0, rightLeftTurn.0, 2.0)
             && is_close(self.position.1, rightLeftTurn.1, 2.0)
         {
             self.direction = Direction::Going_up;
             self.turned = true;
-
         }
-        if self.direction == Direction::Going_down&& !self.turned
+        if self.direction == Direction::Going_down
+            && !self.turned
             && is_close(self.position.0, downLeftTurn.0, 2.0)
             && is_close(self.position.1, downLeftTurn.1, 2.0)
         {
             self.direction = Direction::Going_right;
             self.turned = true;
-            
         }
 
         //----------------------------------------------------------------

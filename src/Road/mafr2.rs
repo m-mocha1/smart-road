@@ -7,6 +7,7 @@ pub fn draw_intersection(
     canvas: &mut sdl2::render::Canvas<sdl2::video::Window>,
     syrat: &Vec<Syara>,
     reserved: &HashSet<(usize, usize)>,
+    v: bool,
 ) -> Result<(), String> {
     const SCREEN_SIZE: u32 = 1000;
     const LANE: u32 = 47;
@@ -33,34 +34,37 @@ pub fn draw_intersection(
 
     // Lane markings - optional: yellow/white lines
     canvas.set_draw_color(Color::RGB(255, 255, 0));
-    let occupied = build_occupancy_set(&syrat);
-    const GRID_ROWS: i32 = 20;
-    const GRID_COLS: i32 = 20;
-    let grid_w = GRID_COLS * LANE as i32;
-    let grid_h = GRID_ROWS * LANE as i32;
-    let origin_x = mid - grid_w / 2;
-    let origin_y = mid - grid_h / 2;
-    canvas.set_draw_color(Color::RGB(128, 0, 128)); // purple
-    for row in 0..GRID_ROWS {
-        for col in 0..GRID_COLS {
-            let x = origin_x + col * LANE as i32;
-            let y = origin_y + row * LANE as i32;
+    if v {
+        let occupied = build_occupancy_set(&syrat);
+        const GRID_ROWS: i32 = 22;
+        const GRID_COLS: i32 = 22;
+        let grid_w = GRID_COLS * LANE as i32;
+        let grid_h = GRID_ROWS * LANE as i32;
+        let origin_x = mid - grid_w / 2;
+        let origin_y = mid - grid_h / 2;
+        canvas.set_draw_color(Color::RGB(128, 0, 128)); // purple
+        for row in 0..GRID_ROWS {
+            for col in 0..GRID_COLS {
+                let x = origin_x + col * LANE as i32;
+                let y = origin_y + row * LANE as i32;
 
-            // Outline
-            canvas.set_draw_color(Color::RGB(128, 0, 128));
-            canvas.draw_rect(Rect::new(x, y, LANE, LANE))?;
+                // Outline
+                canvas.set_draw_color(Color::RGB(128, 0, 128));
+                canvas.draw_rect(Rect::new(x, y, LANE, LANE))?;
 
-            if reserved.contains(&(row as usize, col as usize)) {
-                canvas.set_draw_color(Color::RGBA(255, 0, 0, 96)); // red
-                canvas.fill_rect(Rect::new(x, y, LANE, LANE))?;
-            }
+                if reserved.contains(&(row as usize, col as usize)) {
+                    canvas.set_draw_color(Color::RGBA(255, 0, 0, 96)); // red
+                    canvas.fill_rect(Rect::new(x, y, LANE, LANE))?;
+                }
 
-            if occupied.contains(&(row as usize, col as usize)) {
-                canvas.set_draw_color(Color::RGBA(128, 0, 128, 96));
-                canvas.fill_rect(Rect::new(x, y, LANE, LANE))?;
+                if occupied.contains(&(row as usize, col as usize)) {
+                    canvas.set_draw_color(Color::RGBA(128, 0, 128, 96));
+                    canvas.fill_rect(Rect::new(x, y, LANE, LANE))?;
+                }
             }
         }
     }
+
     for i in 0..7 {
         // vertical
         let offset = i * LANE;
@@ -131,7 +135,7 @@ pub fn draw_intersection(
 pub fn build_occupancy_set(cars: &[Syara]) -> HashSet<(usize, usize)> {
     let mut s = HashSet::new();
     for car in cars {
-        let car_center = (car.position.0 + 40.0, car.position.1 + 40.0);
+        let car_center = (car.position.0 + 20.0, car.position.1 + 20.0);
         if let Some(cell) = grid_cell(car_center) {
             s.insert(cell);
         }
@@ -141,8 +145,8 @@ pub fn build_occupancy_set(cars: &[Syara]) -> HashSet<(usize, usize)> {
 pub fn grid_cell(pos: (f32, f32)) -> Option<(usize, usize)> {
     const SCREEN: u32 = 1000;
     const LANE: u32 = 47;
-    const GRID_ROWS: usize = 20;
-    const GRID_COLS: usize = 20;
+    const GRID_ROWS: usize = 22;
+    const GRID_COLS: usize = 22;
 
     let mid = (SCREEN / 2) as i32;
     let grid_w = (GRID_COLS as u32 * LANE) as i32;
