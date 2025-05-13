@@ -220,17 +220,25 @@ fn predict_path(car: &Syara, max_cells: usize) -> Vec<(usize, usize)> {
     let step_size = 1.0;
     let mut distance = 0.0;
 
-    let mut x = car.position.0 + 20.0;
-    let mut y = car.position.1 + 20.0;
+    let mut x = car.position.0 + 40.0;
+    let mut y = car.position.1 + 40.0;
     let mut dir = car.direction;
 
     while path.len() < max_cells && distance < 300.0 {
         if is_in_intersection_center((x, y)) {
             dir = match (car.lane, dir) {
-                (Lane::Do5ry, Direction::Going_up) => Direction::Going_left,
-                (Lane::Do5ry, Direction::Going_down) => Direction::Going_right,
-                (Lane::Do5ry, Direction::Going_left) => Direction::Going_down,
-                (Lane::Do5ry, Direction::Going_right) => Direction::Going_up,
+                (Lane::Left, Direction::Going_up) => Direction::Going_left,
+                (Lane::Right, Direction::Going_up) => Direction::Going_right,
+
+                (Lane::Left, Direction::Going_down) => Direction::Going_left,
+                (Lane::Right, Direction::Going_down) => Direction::Going_right,
+
+                (Lane::Left, Direction::Going_right) => Direction::Going_up,
+                (Lane::Right, Direction::Going_right) => Direction::Going_down, //g
+
+                (Lane::Left, Direction::Going_left) => Direction::Going_down,
+                (Lane::Right, Direction::Going_left) => Direction::Going_up,
+
                 _ => dir,
             };
         }
@@ -258,7 +266,11 @@ fn predict_path(car: &Syara, max_cells: usize) -> Vec<(usize, usize)> {
 }
 fn is_in_intersection_center(pos: (f32, f32)) -> bool {
     if let Some((row, col)) = grid_cell(pos) {
-        row == 9 && col == 7
+        println!("{} / {}", row, col);
+        //going right turns
+        (row == 9 && col ==7)|| (row == 11 && col == 6) ||
+        //going left turns
+        (row == 8 && col == 5) || (row == 6 && col == 10)
     } else {
         false
     }
