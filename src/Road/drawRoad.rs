@@ -143,7 +143,7 @@ pub fn open_window() -> Result<(), String> {
         }
         if r {
             let now = Instant::now();
-            if now.duration_since(last_spawn_time) >= Duration::from_millis(1500) {
+            if now.duration_since(last_spawn_time) >= Duration::from_millis(700) {
                 let dir = random_dir();
                 let (mslk, mok3) = random_lane_and_pos(&dir);
                 let syara = Syara::new(mok3, dir, mslk, 100.0, false);
@@ -177,6 +177,7 @@ pub fn open_window() -> Result<(), String> {
                             reserved.insert(cell);
                         }   
                         car.speed = (car.speed + 80.0 * dt).min(100.0);
+                        
                         car.update_position(dt);
                        
             // for cell in path.iter().take(look) {
@@ -196,7 +197,10 @@ pub fn open_window() -> Result<(), String> {
             // }
 
         }
-
+        syarat.retain(|car| {
+            let center = (car.position.0 + 40.0, car.position.1 + 40.0);
+            grid_cell(center).is_some()
+        });
         draw_intersection(&mut canvas, &syarat, &reserved, v)?;
         for car in &syarat {
             car.render(&mut canvas, &soar);
