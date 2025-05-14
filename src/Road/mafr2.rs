@@ -135,13 +135,14 @@ pub fn draw_intersection(
 pub fn build_occupancy_set(cars: &[Syara]) -> HashSet<(usize, usize)> {
     let mut s = HashSet::new();
     for car in cars {
-        let car_center = (car.position.0 + 20.0, car.position.1 + 20.0);
+        let car_center = (car.position.0+ 20.0 , car.position.1+20.0 );
         if let Some(cell) = grid_cell(car_center) {
             s.insert(cell);
         }
     }
     s
 }
+
 pub fn grid_cell(pos: (f32, f32)) -> Option<(usize, usize)> {
     const SCREEN: u32 = 1000;
     const LANE: u32 = 47;

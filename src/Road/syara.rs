@@ -153,8 +153,8 @@ impl Syara {
         let rect = sdl2::rect::Rect::new(
             self.position.0 as i32,
             self.position.1 as i32,
-            80, // width of the car
-            80, // height of the car
+            70, // width of the car
+            70, // height of the car
         );
 
         let sora = match self.direction {

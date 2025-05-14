@@ -47,9 +47,11 @@ pub fn open_window() -> Result<(), String> {
     let mut event_pump = sdl_context.event_pump()?;
     let mut syarat: Vec<Syara> = Vec::new();
     let mut last_spawn_time = Instant::now() - Duration::from_secs(7); // So the first keypress works
-    let test_car = Syara::new((485.0, 980.0), Direction::Going_up, Lane::Left, 50.0, false);
+    let test_car = Syara::new((485.0, 980.0), Direction::Going_up, Lane::Left, 0.0, false);
     syarat.push(test_car);
     'running: loop {
+    println!("{}",syarat.len());
+
         for event in event_pump.poll_iter() {
             match event {
                 //if window closed
@@ -62,7 +64,7 @@ pub fn open_window() -> Result<(), String> {
                     syarat.clear();
                 }
 
-                //make syaratS
+                //make syaratSv
                 Event::KeyDown {
                     keycode: Some(Keycode::Left),
                     ..
@@ -141,7 +143,7 @@ pub fn open_window() -> Result<(), String> {
         }
         if r {
             let now = Instant::now();
-            if now.duration_since(last_spawn_time) >= Duration::from_secs(1) {
+            if now.duration_since(last_spawn_time) >= Duration::from_millis(1500) {
                 let dir = random_dir();
                 let (mslk, mok3) = random_lane_and_pos(&dir);
                 let syara = Syara::new(mok3, dir, mslk, 100.0, false);
@@ -153,32 +155,46 @@ pub fn open_window() -> Result<(), String> {
 
         let mut reserved = HashSet::new();
         let occupied = build_occupancy_set(&syarat);
-        let look = 3;
+        // println!("{:?}",occupied);
+        let look = 8;
         for car in &mut syarat {
+            if let Some(curr) = grid_cell((car.position.0 + 40.0, car.position.1 + 40.0)) {
+                reserved.insert(curr);
+            }
             let path = predict_path(car, look);
-            let mut blocked = false;
-            let oci = path.iter().any(|cell| occupied.contains(cell));
-            for cell in path.iter().take(look) {
-                if reserved.contains(cell) {
-                    blocked = true;
-                    break;
-                }
-            }
-            if !oci {
-                car.speed = (car.speed - 100.0 * dt).max(0.0); // slow downs
-            }
 
-            if blocked {
-                car.speed = (car.speed - 100.0 * dt).max(0.0); // slow down
-            } else {
-                car.speed = (car.speed + 80.0 * dt).min(100.0); // restore speed
-                for cell in path.iter().take(look) {
-                    reserved.insert(*cell);
-                }
-            }
-            car.speed = (car.speed + 80.0 * dt).min(100.0); // restore speed
+            let next_blocked = path
+            .get(1)                         // Option<&(usize,usize)>
+            .map(|cell| occupied.contains(cell)|| reserved.contains(cell))
+            .unwrap_or(false);
 
-            car.update_position(dt);
+                    if next_blocked {
+                        car.speed = (car.speed - 50.0  * dt).max(10.0);
+                        continue;
+                        }
+
+                        for &cell in path.iter().take(look) {
+                            reserved.insert(cell);
+                        }   
+                        car.speed = (car.speed + 80.0 * dt).min(100.0);
+                        car.update_position(dt);
+                       
+            // for cell in path.iter().take(look) {
+            //     if next_is_occupied{
+            //         blocked = true;
+            //         break;
+            //     }
+            // }
+            // if  blocked  {
+            //     car.speed = (car.speed - 100.0 * dt).max(5.0); // slow down
+
+            // }else{
+            //     car.speed = (car.speed + 80.0 * dt).min(100.0); // restore speed
+            //     for cell in path.iter().take(look) {
+            //         reserved.insert(*cell);
+            //     }
+            // }
+
         }
 
         draw_intersection(&mut canvas, &syarat, &reserved, v)?;
@@ -239,37 +255,33 @@ fn predict_path(car: &mut Syara, max_cells: usize) -> Vec<(usize, usize)> {
     let step_size = 0.5;
     let mut distance = 0.0;
 
+    // start at the car’s center
     let mut x = car.position.0 + 40.0;
     let mut y = car.position.1 + 40.0;
-    let mut dir = car.direction;
-    let mut old_dir = car.direction;
 
-    if let Some(start_cell) = grid_cell((x, y)) {
-        seen.insert(start_cell);
-        path.push(start_cell);
+    // mark current cell as seen so it's not pushed
+    if let Some(curr) = grid_cell((x, y)) {
+        seen.insert(curr);
     }
 
+    let mut dir = car.direction;
     while path.len() < max_cells && distance < 300.0 {
-        println!("{}", car.pri);
-
-        if !car.pri {
-            dir = is_in_intersection_center((x, y), dir, car.pri, car.lane);
-            if old_dir != dir {
-                car.pri = true;
-            }
+        if !car.turned {
+            dir = detect_turn((x, y), dir,  car.lane);
         }
 
+        // move one step
         let (dx, dy) = match dir {
-            Direction::Going_up => (0.0, -step_size),
-            Direction::Going_down => (0.0, step_size),
-            Direction::Going_left => (-step_size, 0.0),
-            Direction::Going_right => (step_size, 0.0),
+            Direction::Going_up    => (0.0,        -step_size),
+            Direction::Going_down  => (0.0,         step_size),
+            Direction::Going_left  => (-step_size,  0.0),
+            Direction::Going_right => ( step_size,  0.0),
         };
-
         x += dx;
         y += dy;
         distance += step_size;
 
+        // now push only *new* cells
         if let Some(cell) = grid_cell((x, y)) {
             if seen.insert(cell) {
                 path.push(cell);
@@ -278,75 +290,28 @@ fn predict_path(car: &mut Syara, max_cells: usize) -> Vec<(usize, usize)> {
             break;
         }
     }
+
     path
 }
-fn is_in_intersection_center(
+fn detect_turn(
     pos: (f32, f32),
-    direction: Direction,
-    t: bool,
+    dir: Direction,
     lane: Lane,
-) -> Direction {
+) -> Direction{
     if let Some((row, col)) = grid_cell(pos) {
-        //going up turns works
-        if direction == Direction::Going_up && lane == Lane::Left && (row == 10 && col == 11) && !t
-        {
-            return Direction::Going_left;
-        } else if direction == Direction::Going_up
-            && lane == Lane::Right
-            && (row == 13 && col == 13)
-            && !t
-        {
-            return Direction::Going_right;
-        //--------------
-
-        //going right turns works
-        } else if direction == Direction::Going_right
-            && lane == Lane::Left
-            && (row == 11 && col == 11)
-            && !t
-        {
-            return Direction::Going_up;
-        } else if direction == Direction::Going_right
-            && lane == Lane::Right
-            && (row == 13 && col == 8)
-            && !t
-        {
-            return Direction::Going_down;
-            //--------------
-
-            //going left turns works
-        } else if direction == Direction::Going_left
-            && lane == Lane::Left
-            && (row == 10 && col == 10)
-            && !t
-        {
-            return Direction::Going_down;
-        } else if direction == Direction::Going_left
-            && lane == Lane::Right
-            && (row == 8 && col == 13)
-            && !t
-        {
-            return Direction::Going_up;
-            //--------------
-
-            //going down turns
-        } else if direction == Direction::Going_down
-            && lane == Lane::Left
-            && (row == 11 && col == 10)
-            && !t
-        {
-            return Direction::Going_right;
-        } else if direction == Direction::Going_down
-            && lane == Lane::Right
-            && (row == 8 && col == 8)
-            && !t
-        {
-            return Direction::Going_left;
-        //--------------
-        } else {
-            direction
+        // println!("row {}/ col {}",row,col);
+        match (dir, lane, row, col) {
+            (Direction::Going_up,    Lane::Left,  10, 11) => Direction::Going_left,
+            (Direction::Going_up,    Lane::Right, 13, 13) => Direction::Going_right,
+            (Direction::Going_right, Lane::Left,  11, 11) => Direction::Going_up,
+            (Direction::Going_right, Lane::Right, 13,  8) => Direction::Going_down,
+            // (Direction::Going_left,  Lane::Left,  10, 10) => Direction::Going_down,
+            (Direction::Going_left,  Lane::Right,  8, 13) => Direction::Going_up,
+            (Direction::Going_down,  Lane::Left,  11, 10) => Direction::Going_right,
+            (Direction::Going_down,  Lane::Right,  8,  8) => Direction::Going_left,
+            _ => dir,
         }
     } else {
-        direction
+        dir
     }
 }
