@@ -1,5 +1,6 @@
 extern crate sdl2;
 use crate::Road::mafr2::build_occupancy_set;
+use crate::Road::mafr2::cell_to_spawn_pos;
 use crate::Road::mafr2::grid_cell;
 use rand::prelude::*;
 use rand::seq::SliceRandom;
@@ -22,8 +23,8 @@ pub fn open_window() -> Result<(), String> {
 
     let window = video_subsystem
         .window("Smart Intersection", 1000, 1000)
-        .position(2500, 10)
-        // .position_centered()
+        // .position(2500, 10)
+        .position_centered()
         // .position(900, 80)
         // .position(1500, 80)
         .build()
@@ -47,11 +48,8 @@ pub fn open_window() -> Result<(), String> {
     let mut event_pump = sdl_context.event_pump()?;
     let mut syarat: Vec<Syara> = Vec::new();
     let mut last_spawn_time = Instant::now() - Duration::from_secs(7); // So the first keypress works
-    let test_car = Syara::new((485.0, 980.0), Direction::Going_up, Lane::Left, 0.0, false);
-    syarat.push(test_car);
-    'running: loop {
-    println!("{}",syarat.len());
 
+    'running: loop {
         for event in event_pump.poll_iter() {
             match event {
                 //if window closed
@@ -143,7 +141,7 @@ pub fn open_window() -> Result<(), String> {
         }
         if r {
             let now = Instant::now();
-            if now.duration_since(last_spawn_time) >= Duration::from_millis(700) {
+            if now.duration_since(last_spawn_time) >= Duration::from_millis(800) {
                 let dir = random_dir();
                 let (mslk, mok3) = random_lane_and_pos(&dir);
                 let syara = Syara::new(mok3, dir, mslk, 100.0, false);
@@ -158,49 +156,32 @@ pub fn open_window() -> Result<(), String> {
         // println!("{:?}",occupied);
         let look = 8;
         for car in &mut syarat {
-            if let Some(curr) = grid_cell((car.position.0 + 40.0, car.position.1 + 40.0)) {
+            if let Some(curr) = grid_cell((car.position.0 + 25.0, car.position.1 + 25.0)) {
                 reserved.insert(curr);
             }
             let path = predict_path(car, look);
 
             let next_blocked = path
-            .get(1)                         // Option<&(usize,usize)>
-            .map(|cell| occupied.contains(cell)|| reserved.contains(cell))
-            .unwrap_or(false);
+                .get(1) // Option<&(usize,usize)>
+                .map(|cell| occupied.contains(cell) || reserved.contains(cell))
+                .unwrap_or(false);
 
-                    if next_blocked {
-                        car.speed = (car.speed - 50.0  * dt).max(10.0);
-                        continue;
-                        }
+            if next_blocked {
+                car.speed = (car.speed - 150.0 * dt).max(8.0);
+            } else {
+                car.speed = (car.speed + 80.0 * dt).min(100.0);
+                for &cell in path.iter().take(look) {
+                    reserved.insert(cell);
+                }
+            }
 
-                        for &cell in path.iter().take(look) {
-                            reserved.insert(cell);
-                        }   
-                        car.speed = (car.speed + 80.0 * dt).min(100.0);
-                        
-                        car.update_position(dt);
-                       
-            // for cell in path.iter().take(look) {
-            //     if next_is_occupied{
-            //         blocked = true;
-            //         break;
-            //     }
-            // }
-            // if  blocked  {
-            //     car.speed = (car.speed - 100.0 * dt).max(5.0); // slow down
-
-            // }else{
-            //     car.speed = (car.speed + 80.0 * dt).min(100.0); // restore speed
-            //     for cell in path.iter().take(look) {
-            //         reserved.insert(*cell);
-            //     }
-            // }
-
+            car.update_position(dt);
         }
         syarat.retain(|car| {
             let center = (car.position.0 + 40.0, car.position.1 + 40.0);
             grid_cell(center).is_some()
         });
+
         draw_intersection(&mut canvas, &syarat, &reserved, v)?;
         for car in &syarat {
             car.render(&mut canvas, &soar);
@@ -222,22 +203,40 @@ fn random_lane_and_pos(direction: &Direction) -> (super::syara::Lane, (f32, f32)
     let lane = *lanes.choose(&mut rng).unwrap();
 
     let pos = match (&lane, direction) {
-        (Lane::Left, Direction::Going_right) => (0.0, 484.0),
-        (Lane::Right, Direction::Going_right) => (0.0, 578.0),
-        (Lane::Do5ry, Direction::Going_right) => (0.0, 530.0),
+        (Lane::Left, Direction::Going_right) => cell_to_spawn_pos((11, 0)),
+        (Lane::Do5ry, Direction::Going_right) => cell_to_spawn_pos((12, 0)),
+        (Lane::Right, Direction::Going_right) => cell_to_spawn_pos((13, 0)),
 
-        (Lane::Left, Direction::Going_up) => (485.0, 980.0),
-        (Lane::Right, Direction::Going_up) => (580.0, 980.0),
-        (Lane::Do5ry, Direction::Going_up) => (530.0, 980.0),
+        (Lane::Left, Direction::Going_up) => cell_to_spawn_pos((22, 11)),
+        (Lane::Do5ry, Direction::Going_up) => cell_to_spawn_pos((22, 12)),
+        (Lane::Right, Direction::Going_up) => cell_to_spawn_pos((22, 13)),
 
-        (Lane::Left, Direction::Going_left) => (980.0, 440.0),
-        (Lane::Right, Direction::Going_left) => (980.0, 345.0),
-        (Lane::Do5ry, Direction::Going_left) => (900.0, 390.0),
+        (Lane::Left, Direction::Going_left) => cell_to_spawn_pos((8, 21)),
+        (Lane::Do5ry, Direction::Going_left) => cell_to_spawn_pos((9, 21)),
+        (Lane::Right, Direction::Going_left) => cell_to_spawn_pos((10, 21)),
 
-        (Lane::Left, Direction::Going_down) => (440.0, 0.0),
-        (Lane::Right, Direction::Going_down) => (345.0, 0.0),
-        (Lane::Do5ry, Direction::Going_down) => (391.0, 0.0),
+        (Lane::Left, Direction::Going_down) => cell_to_spawn_pos((0, 8)),
+        (Lane::Do5ry, Direction::Going_down) => cell_to_spawn_pos((0, 9)),
+        (Lane::Right, Direction::Going_down) => cell_to_spawn_pos((0, 10)),
     };
+
+    // let pos = match (&lane, direction) {
+    //     (Lane::Left, Direction::Going_right) => (0.0, 500.0),
+    //     (Lane::Right, Direction::Going_right) => (0.0, 593.0),
+    //     (Lane::Do5ry, Direction::Going_right) => (0.0, 543.0),
+
+    //     (Lane::Left, Direction::Going_up) => (500.0, 980.0),
+    //     (Lane::Right, Direction::Going_up) => (590.0, 980.0),
+    //     (Lane::Do5ry, Direction::Going_up) => (545.0, 980.0),
+
+    //     (Lane::Left, Direction::Going_left) => (980.0, 357.0),
+    //     (Lane::Right, Direction::Going_left) => (980.0, 450.0),
+    //     (Lane::Do5ry, Direction::Going_left) => (980.0, 404.0),
+
+    //     (Lane::Left, Direction::Going_down) => (355.0, 0.0),
+    //     (Lane::Right, Direction::Going_down) => (450.0, 0.0),
+    //     (Lane::Do5ry, Direction::Going_down) => (405.0, 0.0),
+    // };
 
     (lane, pos)
 }
@@ -260,26 +259,30 @@ fn predict_path(car: &mut Syara, max_cells: usize) -> Vec<(usize, usize)> {
     let mut distance = 0.0;
 
     // start at the car’s center
-    let mut x = car.position.0 + 40.0;
-    let mut y = car.position.1 + 40.0;
-
+    let mut x = car.position.0 + 20.0;
+    let mut y = car.position.1 + 25.0;
     // mark current cell as seen so it's not pushed
     if let Some(curr) = grid_cell((x, y)) {
         seen.insert(curr);
     }
 
+    let mut turned = false;
     let mut dir = car.direction;
     while path.len() < max_cells && distance < 300.0 {
-        if !car.turned {
-            dir = detect_turn((x, y), dir,  car.lane);
+        if !turned && !car.turned {
+            let new_dir = detect_turn((x, y), dir, car.lane);
+            if new_dir != dir {
+                dir = new_dir;
+                turned = true;
+            }
         }
 
         // move one step
         let (dx, dy) = match dir {
-            Direction::Going_up    => (0.0,        -step_size),
-            Direction::Going_down  => (0.0,         step_size),
-            Direction::Going_left  => (-step_size,  0.0),
-            Direction::Going_right => ( step_size,  0.0),
+            Direction::Going_up => (0.0, -step_size),
+            Direction::Going_down => (0.0, step_size),
+            Direction::Going_left => (-step_size, 0.0),
+            Direction::Going_right => (step_size, 0.0),
         };
         x += dx;
         y += dy;
@@ -297,22 +300,34 @@ fn predict_path(car: &mut Syara, max_cells: usize) -> Vec<(usize, usize)> {
 
     path
 }
-fn detect_turn(
-    pos: (f32, f32),
-    dir: Direction,
-    lane: Lane,
-) -> Direction{
+pub fn detect_turn(pos: (f32, f32), dir: Direction, lane: Lane) -> Direction {
     if let Some((row, col)) = grid_cell(pos) {
-        // println!("row {}/ col {}",row,col);
         match (dir, lane, row, col) {
-            (Direction::Going_up,    Lane::Left,  10, 11) => Direction::Going_left,
-            (Direction::Going_up,    Lane::Right, 13, 13) => Direction::Going_right,
-            (Direction::Going_right, Lane::Left,  11, 11) => Direction::Going_up,
-            (Direction::Going_right, Lane::Right, 13,  8) => Direction::Going_down,
-            // (Direction::Going_left,  Lane::Left,  10, 10) => Direction::Going_down,
-            (Direction::Going_left,  Lane::Right,  8, 13) => Direction::Going_up,
-            (Direction::Going_down,  Lane::Left,  11, 10) => Direction::Going_right,
-            (Direction::Going_down,  Lane::Right,  8,  8) => Direction::Going_left,
+            (Direction::Going_up, Lane::Left, 10, 11) => Direction::Going_left,
+            (Direction::Going_up, Lane::Right, 13, 13) => Direction::Going_right,
+            (Direction::Going_right, Lane::Left, 11, 11) => Direction::Going_up,
+            (Direction::Going_right, Lane::Right, 13, 8) => Direction::Going_down,
+            (Direction::Going_left, Lane::Left, 8, 13) => Direction::Going_up,
+            (Direction::Going_left, Lane::Right, 10, 10) => Direction::Going_down,
+            (Direction::Going_down, Lane::Left, 8, 8) => Direction::Going_left,
+            (Direction::Going_down, Lane::Right, 11, 10) => Direction::Going_right,
+            _ => dir,
+        }
+    } else {
+        dir
+    }
+}
+pub fn turn_now(pos: (f32, f32), dir: Direction, lane: Lane) -> Direction {
+    if let Some((row, col)) = grid_cell(pos) {
+        match (dir, lane, row, col) {
+            (Direction::Going_up, Lane::Left, 10, 11) => Direction::Going_left,
+            (Direction::Going_up, Lane::Right, 13, 13) => Direction::Going_right,
+            (Direction::Going_right, Lane::Left, 11, 12) => Direction::Going_up,
+            (Direction::Going_right, Lane::Right, 13, 9) => Direction::Going_down,
+            (Direction::Going_left, Lane::Left, 8, 13) => Direction::Going_up,
+            (Direction::Going_left, Lane::Right, 10, 10) => Direction::Going_down,
+            (Direction::Going_down, Lane::Left, 9, 8) => Direction::Going_left,
+            (Direction::Going_down, Lane::Right, 12, 10) => Direction::Going_right,
             _ => dir,
         }
     } else {

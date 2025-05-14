@@ -135,7 +135,7 @@ pub fn draw_intersection(
 pub fn build_occupancy_set(cars: &[Syara]) -> HashSet<(usize, usize)> {
     let mut s = HashSet::new();
     for car in cars {
-        let car_center = (car.position.0+ 20.0 , car.position.1+20.0 );
+        let car_center = (car.position.0 + 10.0, car.position.1 + 10.0);
         if let Some(cell) = grid_cell(car_center) {
             s.insert(cell);
         }
@@ -170,4 +170,24 @@ pub fn grid_cell(pos: (f32, f32)) -> Option<(usize, usize)> {
     } else {
         None
     }
+}
+pub fn cell_to_spawn_pos((row, col): (usize, usize)) -> (f32, f32) {
+    const SCREEN: f32 = 1000.0;
+    const LANE: f32 = 47.0;
+    const GRID_ROWS: usize = 22;
+    const GRID_COLS: usize = 22;
+    const SPRITE_HALF: f32 = 25.0;
+    // 1) compute grid origin in world coords
+    let mid = SCREEN / 2.0;
+    let grid_w = GRID_COLS as f32 * LANE;
+    let grid_h = GRID_ROWS as f32 * LANE;
+    let origin_x = mid - grid_w / 2.0;
+    let origin_y = mid - grid_h / 2.0;
+
+    // 2) compute the pixel‐coords of the *center* of that cell
+    let center_x = origin_x + (col as f32 + 0.5) * LANE;
+    let center_y = origin_y + (row as f32 + 0.5) * LANE;
+
+    // 3) subtract half the sprite size to get the top‐left
+    (center_x - SPRITE_HALF, center_y - SPRITE_HALF)
 }
