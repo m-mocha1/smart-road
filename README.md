@@ -18,7 +18,8 @@ A Rust-based simulation of an autonomous vehicle intersection management system,
 - [cargo-watch](https://crates.io/crates/cargo-watch) (optional, for hot dev loop)
 
 
-![ezgif-8d61c3357ce5ab](https://github.com/user-attachments/assets/3168bf2c-8401-416f-8657-55084b204def)
+![ezgif-8cffb88a7b2bed](https://github.com/user-attachments/assets/a38bdb61-8c65-492f-b7c9-bd7ec08262e9)
+
 
 
 
