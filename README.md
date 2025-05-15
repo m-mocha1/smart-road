@@ -17,4 +17,8 @@ A Rust-based simulation of an autonomous vehicle intersection management system,
 - [vcpkg](https://github.com/microsoft/vcpkg) (for SDL2 C++ dependencies)
 - [cargo-watch](https://crates.io/crates/cargo-watch) (optional, for hot dev loop)
 
+
+https://github.com/user-attachments/assets/9162b7a5-7ac6-409f-a74a-6b7b6917fc3a
+
+
 still a work in progress 
