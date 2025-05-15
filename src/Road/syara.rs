@@ -12,6 +12,7 @@ pub struct Syara {
     pub speed: f32,
     pub turned: bool,
     pub pri: bool,
+    pub extLook: bool,
 }
 
 pub struct CarTextures<'a> {
@@ -53,6 +54,7 @@ impl Syara {
             speed,
             turned: false,
             pri: false,
+            extLook: false,
         }
     }
 

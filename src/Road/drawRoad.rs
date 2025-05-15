@@ -50,6 +50,7 @@ pub fn open_window() -> Result<(), String> {
     let mut last_spawn_time = Instant::now() - Duration::from_secs(7); // So the first keypress works
 
     'running: loop {
+        println!("{}",syarat.len());
         for event in event_pump.poll_iter() {
             match event {
                 //if window closed
@@ -139,9 +140,9 @@ pub fn open_window() -> Result<(), String> {
                 _ => {}
             }
         }
-        if r {
+        if r { 
             let now = Instant::now();
-            if now.duration_since(last_spawn_time) >= Duration::from_millis(800) {
+            if now.duration_since(last_spawn_time) >= Duration::from_millis(500) &&  syarat.len() <= 12 {
                 let dir = random_dir();
                 let (mslk, mok3) = random_lane_and_pos(&dir);
                 let syara = Syara::new(mok3, dir, mslk, 100.0, false);
@@ -153,32 +154,33 @@ pub fn open_window() -> Result<(), String> {
 
         let mut reserved = HashSet::new();
         let occupied = build_occupancy_set(&syarat);
-        // println!("{:?}",occupied);
-        let look = 8;
         for car in &mut syarat {
+            let look = add_look((car.position.0 + 25.0, car.position.1 + 25.0), car);
             if let Some(curr) = grid_cell((car.position.0 + 25.0, car.position.1 + 25.0)) {
                 reserved.insert(curr);
             }
             let path = predict_path(car, look);
 
-            let next_blocked = path
-                .get(1) // Option<&(usize,usize)>
-                .map(|cell| occupied.contains(cell) || reserved.contains(cell))
-                .unwrap_or(false);
+            let dist_to_block = path
+                .iter()
+                .position(|cell| occupied.contains(cell) || reserved.contains(cell));
 
-            if next_blocked {
-                car.speed = (car.speed - 150.0 * dt).max(8.0);
-            } else {
-                car.speed = (car.speed + 80.0 * dt).min(100.0);
-                for &cell in path.iter().take(look) {
-                    reserved.insert(cell);
+            match dist_to_block {
+                Some(d) if d <= look => {
+                    car.speed = (car.speed - 100.0 * dt).max(20.0);
+                }
+                _ => {
+                    car.speed = (car.speed + 80.0 * dt).min(100.0);
+                    for &cell in path.iter().take(look) {
+                        reserved.insert(cell);
+                    }
                 }
             }
 
             car.update_position(dt);
         }
         syarat.retain(|car| {
-            let center = (car.position.0 + 40.0, car.position.1 + 40.0);
+            let center = (car.position.0 + 25.0, car.position.1 + 25.0);
             grid_cell(center).is_some()
         });
 
@@ -207,9 +209,9 @@ fn random_lane_and_pos(direction: &Direction) -> (super::syara::Lane, (f32, f32)
         (Lane::Do5ry, Direction::Going_right) => cell_to_spawn_pos((12, 0)),
         (Lane::Right, Direction::Going_right) => cell_to_spawn_pos((13, 0)),
 
-        (Lane::Left, Direction::Going_up) => cell_to_spawn_pos((22, 11)),
-        (Lane::Do5ry, Direction::Going_up) => cell_to_spawn_pos((22, 12)),
-        (Lane::Right, Direction::Going_up) => cell_to_spawn_pos((22, 13)),
+        (Lane::Left, Direction::Going_up) => cell_to_spawn_pos((21, 11)),
+        (Lane::Do5ry, Direction::Going_up) => cell_to_spawn_pos((21, 12)),
+        (Lane::Right, Direction::Going_up) => cell_to_spawn_pos((21, 13)),
 
         (Lane::Left, Direction::Going_left) => cell_to_spawn_pos((8, 21)),
         (Lane::Do5ry, Direction::Going_left) => cell_to_spawn_pos((9, 21)),
@@ -219,24 +221,6 @@ fn random_lane_and_pos(direction: &Direction) -> (super::syara::Lane, (f32, f32)
         (Lane::Do5ry, Direction::Going_down) => cell_to_spawn_pos((0, 9)),
         (Lane::Right, Direction::Going_down) => cell_to_spawn_pos((0, 10)),
     };
-
-    // let pos = match (&lane, direction) {
-    //     (Lane::Left, Direction::Going_right) => (0.0, 500.0),
-    //     (Lane::Right, Direction::Going_right) => (0.0, 593.0),
-    //     (Lane::Do5ry, Direction::Going_right) => (0.0, 543.0),
-
-    //     (Lane::Left, Direction::Going_up) => (500.0, 980.0),
-    //     (Lane::Right, Direction::Going_up) => (590.0, 980.0),
-    //     (Lane::Do5ry, Direction::Going_up) => (545.0, 980.0),
-
-    //     (Lane::Left, Direction::Going_left) => (980.0, 357.0),
-    //     (Lane::Right, Direction::Going_left) => (980.0, 450.0),
-    //     (Lane::Do5ry, Direction::Going_left) => (980.0, 404.0),
-
-    //     (Lane::Left, Direction::Going_down) => (355.0, 0.0),
-    //     (Lane::Right, Direction::Going_down) => (450.0, 0.0),
-    //     (Lane::Do5ry, Direction::Going_down) => (405.0, 0.0),
-    // };
 
     (lane, pos)
 }
@@ -332,5 +316,31 @@ pub fn turn_now(pos: (f32, f32), dir: Direction, lane: Lane) -> Direction {
         }
     } else {
         dir
+    }
+}
+pub fn add_look(pos: (f32, f32), car: &mut Syara) -> usize {
+    if car.extLook {
+        return 6;
+    }
+    match grid_cell(pos) {
+        Some((row, col)) => match (row, col) {
+            //left
+             (11, 4)
+            | (12, 4)
+            //right
+            | (9, 18)
+            | (10, 18)
+            // up 
+            | (4, 9)    
+            | (4, 10)    
+            //down
+            | (17, 12)
+            | (17, 11) => {
+                car.extLook = true;
+                10
+            }
+            _ => 2,
+        },
+        None => 2,
     }
 }
