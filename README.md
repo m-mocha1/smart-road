@@ -19,4 +19,4 @@ A Rust-based simulation of an autonomous vehicle intersection management system,
 
 ![ezgif-8cffb88a7b2bed](https://github.com/user-attachments/assets/a38bdb61-8c65-492f-b7c9-bd7ec08262e9)
 
-still a work in progress
+
